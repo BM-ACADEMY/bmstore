@@ -44,7 +44,7 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    ssh root@SERVER_IP
    ```
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/afraventurepvt-create/bmstore/main/deploy/server-setup.sh -o server-setup.sh
+   curl -fsSL https://raw.githubusercontent.com/BM-ACADEMY/bmstore/main/deploy/server-setup.sh -o server-setup.sh
    ```
    ```bash
    bash server-setup.sh --ssh-key "$(echo 'PASTE_YOUR_ssh-ed25519_PUBLIC_KEY_HERE')"
@@ -59,7 +59,7 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    ssh deploy@SERVER_IP
    ```
    ```bash
-   git clone https://github.com/afraventurepvt-create/bmstore.git /opt/bmstore && cd /opt/bmstore
+   git clone https://github.com/BM-ACADEMY/bmstore.git /opt/bmstore && cd /opt/bmstore
    ```
    (private repo: create a read-only deploy key on GitHub → Settings → Deploy keys, or use a fine-grained PAT.)
    ✅ `ls /opt/bmstore/deploy` lists `deploy.sh`, `compose.sh`, `docker-compose.prod.yml`.
