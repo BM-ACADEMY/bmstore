@@ -7,7 +7,7 @@ import { configureApp } from './app.setup';
 import { AppConfig } from './config/app-config';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true }); // rawBody: webhook signatures
   configureApp(app);
   app.enableShutdownHooks();
   const cfg = app.get(AppConfig);

@@ -20,6 +20,7 @@ import { RedisService } from './redis/redis.service';
 import { TenancyModule } from './tenancy/tenancy.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { StorefrontModule } from './storefront/storefront.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Global()
 @Module({
@@ -28,5 +29,5 @@ import { StorefrontModule } from './storefront/storefront.module';
 })
 class CoreModule {}
 
-@Module({ imports: [CoreModule, MailModule, StorageModule, TenancyModule, AuthModule, SuperadminModule, StoreModule, UploadsModule, CatalogModule, OrdersModule, CustomersModule, CouponsModule, PagesModule, SettingsModule, ImportModule, MediaModule, LimitsModule, StorefrontModule], controllers: [HealthController] })
+@Module({ imports: [CoreModule, MailModule, NotificationsModule, StorageModule, TenancyModule, AuthModule, SuperadminModule, StoreModule, UploadsModule, CatalogModule, OrdersModule, CustomersModule, CouponsModule, PagesModule, SettingsModule, ImportModule, MediaModule, LimitsModule, StorefrontModule], controllers: [HealthController] })
 export class AppModule {}

@@ -1,5 +1,5 @@
 'use client';
-import { createContext, ReactNode, useContext } from 'react';
+import { createContext, ReactNode, useCallback, useContext } from 'react';
 import type { Lang } from './i18n';
 
 export interface StoreInfo { name: string; slug: string; status: string; address: string | null; gstNumber: string | null; supportPhone: string | null; whatsappNumber: string | null }
@@ -16,9 +16,9 @@ export function useStore(): StoreCtx {
 /** Client-side translation with the dictionary the server picked for this request. */
 export function useT() {
   const { messages } = useStore();
-  return (key: string, vars?: Record<string, string | number>) => {
+  return useCallback((key: string, vars?: Record<string, string | number>) => {
     let s = messages[key] ?? key;
     if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
     return s;
-  };
+  }, [messages]);
 }

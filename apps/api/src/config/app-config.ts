@@ -54,6 +54,23 @@ export class AppConfig {
   readonly forgotPerEmailLimit = Number(process.env.FORGOT_PER_EMAIL_LIMIT ?? 3);
   readonly forgotPerIpLimit = Number(process.env.FORGOT_PER_IP_LIMIT ?? 10);
   readonly forgotWindowSec = Number(process.env.FORGOT_WINDOW_SECONDS ?? 900);
+  // --- Storefront (src/storefront) ---
+  /** Checkout attempts per IP per window, OTP sends per phone and per IP, order lookups per IP. Redis-backed, fail open. */
+  readonly checkoutIpLimit = Number(process.env.CHECKOUT_IP_LIMIT ?? 10);
+  readonly checkoutWindowSec = Number(process.env.CHECKOUT_WINDOW_SECONDS ?? 600);
+  readonly otpPhoneLimit = Number(process.env.OTP_PHONE_LIMIT ?? 5);
+  readonly otpIpLimit = Number(process.env.OTP_IP_LIMIT ?? 20);
+  readonly otpWindowSec = Number(process.env.OTP_WINDOW_SECONDS ?? 600);
+  readonly otpTtlSec = Number(process.env.OTP_TTL_SECONDS ?? 300);
+  readonly lookupIpLimit = Number(process.env.LOOKUP_IP_LIMIT ?? 20);
+  readonly lookupWindowSec = Number(process.env.LOOKUP_WINDOW_SECONDS ?? 600);
+  /** Razorpay REST base; tests point it at an in-process double. Keys are per tenant (encrypted in tenants). */
+  readonly razorpayApiBase = (process.env.RAZORPAY_API_BASE ?? 'https://api.razorpay.com').replace(/\/$/, '');
+  /** Background jobs (unpaid-order expiry, weekly summary) inside the API process; off under test. */
+  readonly jobsEnabled = (process.env.JOBS_ENABLED ?? (process.env.NODE_ENV === 'test' ? '0' : '1')) === '1';
+  readonly jobsIntervalMs = Number(process.env.JOBS_INTERVAL_MS ?? 60_000);
+  /** Public base domain of the platform (stores live at <slug>.<domain> unless they have a custom domain). */
+  readonly platformBaseDomain = (process.env.PLATFORM_BASE_DOMAIN ?? process.env.ROOT_DOMAIN ?? 'store.bmtechx.in').toLowerCase();
   /** Subdomains that are platform hosts, never tenants. */
   readonly reservedSubdomains = new Set(['www', 'admin', 'api', 'app', 'static', 'cdn', 'mail']);
 

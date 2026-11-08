@@ -37,6 +37,8 @@ export class CreateProductDto {
   /** Public URLs of this store's media (validated against the tenant's media prefix). */
   @IsOptional() @IsArray() @ArrayMaxSize(12) @IsString({ each: true }) @MaxLength(500, { each: true }) images?: string[] = [];
   @IsOptional() @IsString() @MaxLength(8) hsnCode?: string | null;
+  /** GST rate for this product in basis points (500 = 5%); null = store default */
+  @IsOptional() @IsInt() @Min(0) @Max(10_000) gstRateBp?: number | null;
   @IsOptional() @IsArray() @ArrayMaxSize(100) @ValidateNested({ each: true }) @Type(() => VariantInput) variants?: VariantInput[];
 }
 
@@ -52,6 +54,7 @@ export class UpdateProductDto {
   @IsOptional() @IsUUID() categoryId?: string | null;
   @IsOptional() @IsArray() @ArrayMaxSize(12) @IsString({ each: true }) @MaxLength(500, { each: true }) images?: string[];
   @IsOptional() @IsString() @MaxLength(8) hsnCode?: string | null;
+  @IsOptional() @IsInt() @Min(0) @Max(10_000) gstRateBp?: number | null;
 }
 
 export class StockDto {
