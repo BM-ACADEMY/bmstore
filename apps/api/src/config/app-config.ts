@@ -8,7 +8,13 @@ import { Injectable } from '@nestjs/common';
 export class AppConfig {
   readonly nodeEnv = process.env.NODE_ENV ?? 'development';
   readonly port = Number(process.env.PORT ?? 3000);
-  readonly rootDomain = (process.env.ROOT_DOMAIN ?? 'localhost').toLowerCase();
+  /**
+   * Platform base domain: stores live at <slug>.<PLATFORM_BASE_DOMAIN> and client domains CNAME to it.
+   * Default store.bmtechx.in. Dev keeps storename.localhost (ROOT_DOMAIN=localhost).
+   */
+  readonly platformBaseDomain = (process.env.PLATFORM_BASE_DOMAIN || 'store.bmtechx.in').toLowerCase().replace(/\.$/, '');
+  /** Host suffix used to resolve tenants. ROOT_DOMAIN if set; otherwise the platform base domain in production, localhost elsewhere. */
+  readonly rootDomain = (process.env.ROOT_DOMAIN ?? (process.env.NODE_ENV === 'production' ? this.platformBaseDomain : 'localhost')).toLowerCase();
   readonly trustProxy = process.env.TRUST_PROXY === '1';
   /** Application role: owns no tables, NOBYPASSRLS. Row-level security applies to every query. */
   readonly databaseUrl = required('DATABASE_URL');
@@ -55,7 +61,30 @@ export class AppConfig {
   readonly forgotPerIpLimit = Number(process.env.FORGOT_PER_IP_LIMIT ?? 10);
   readonly forgotWindowSec = Number(process.env.FORGOT_WINDOW_SECONDS ?? 900);
   /** Subdomains that are platform hosts, never tenants. */
-  readonly reservedSubdomains = new Set(['www', 'admin', 'api', 'app', 'static', 'cdn', 'mail']);
+  readonly reservedSubdomains = new Set(['www', 'admin', 'api', 'app', 'static', 'cdn', 'mail', 'console', 'media', 'minio']);
+
+  // --- Phase 5: developer console, provisioning, QA, jobs, webhooks ---
+  /** Public store URL. {host} = <subdomain>.<rootDomain>. Dev default points at the storefront dev server. */
+  readonly storeUrlTemplate = process.env.STORE_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3002' : 'https://{host}');
+  /** Store admin URL (impersonation lands here). {host} = <subdomain>.<rootDomain>. */
+  readonly adminUrlTemplate = process.env.ADMIN_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3001' : 'https://{host}/admin');
+  /** BullMQ scheduled jobs + webhook delivery worker inside the API process. Off under test. */
+  readonly jobsEnabled = (process.env.JOBS_WORKER ?? (process.env.NODE_ENV === 'test' ? '0' : '1')) === '1';
+  /** Outbound n8n webhook (one URL receives every event; n8n routes on `event`). Unset => events are recorded, not sent. */
+  readonly n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || undefined;
+  /** HMAC-SHA256 key for the X-BMStore-Signature header. */
+  readonly webhookSecret = process.env.WEBHOOK_SECRET || undefined;
+  /** Platform Razorpay account (client fees). Refund helper uses it; test-mode keys only unless RAZORPAY_ALLOW_LIVE_REFUNDS=1. */
+  readonly platformRazorpayKeyId = process.env.PLATFORM_RAZORPAY_KEY_ID || undefined;
+  readonly platformRazorpayKeySecret = process.env.PLATFORM_RAZORPAY_KEY_SECRET || undefined;
+  readonly allowLiveRefunds = process.env.RAZORPAY_ALLOW_LIVE_REFUNDS === '1';
+  /** Developer contact for alerts (stubbed WhatsApp / email). */
+  readonly developerWhatsapp = process.env.DEVELOPER_WHATSAPP || '919403892971';
+  readonly developerEmail = process.env.DEVELOPER_EMAIL || undefined;
+  /** Where infra/backup writes its state files (backup.nightly.last). */
+  readonly backupStateDir = process.env.BMSTORE_STATE_DIR || '/state';
+  /** Public holidays (YYYY-MM-DD, comma separated) skipped when counting working days. */
+  readonly holidays = new Set((process.env.WORKING_DAY_HOLIDAYS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
 
   get isProd() {
     return this.nodeEnv === 'production';
