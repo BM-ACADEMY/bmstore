@@ -49,6 +49,7 @@ export const SCOPES: Record<string, Scope> = {
   Media: { kind: 'direct' },
   TenantUsage: { kind: 'direct' },
   AuditLog: { kind: 'direct', nullable: true },
+  StoreIntake: { kind: 'direct' },
 };
 
 /** Tenants may only edit these columns of their own tenant row. Plan/status/expiry/domains: superadmin only. */

@@ -32,7 +32,7 @@ const lc = (m: string) => m[0].toLowerCase() + m.slice(1);
 const modelDef = (m: string) => DMMF_MODELS.find((x) => x.name === m)!;
 const pkField = (m: string) => modelDef(m).fields.find((f) => f.isId)!.name; // 'id' or 'tenantId'
 const hasField = (m: string, f: string) => modelDef(m).fields.some((x) => x.name === f);
-const SINGLE_ROW = new Set(['Tenant', 'ThemeConfig', 'Settings', 'TenantUsage']); // exactly one row per tenant
+const SINGLE_ROW = new Set(['Tenant', 'ThemeConfig', 'Settings', 'TenantUsage', 'StoreIntake']); // exactly one row per tenant
 const rnd = () => randomBytes(4).toString('hex');
 
 async function rejection(p: Promise<any>): Promise<any> {
@@ -62,12 +62,13 @@ const factories: Record<string, (db: any, s: Seed, i: number, over?: Row) => Pro
   RefreshToken: (db, s, i, o) => db.refreshToken.create({ data: { userId: s.User[0].id, familyId: randomUUID(), tokenHash: `h-${rnd()}-${i}`, expiresAt: new Date(Date.now() + 86_400_000), ...o } }),
   PasswordResetToken: (db, s, i, o) => db.passwordResetToken.create({ data: { userId: s.User[0].id, tokenHash: `r-${rnd()}-${i}`, expiresAt: new Date(Date.now() + 1_800_000), ...o } }),
   AuditLog: (db, _s, i, o) => db.auditLog.create({ data: { action: `gate.seed.${i}`, meta: { i }, ...o } }),
+  StoreIntake: (db, _s, i, o) => db.storeIntake.create({ data: { intakeKey: `gate-${i}-${rnd()}`, businessName: `Gate biz ${i}`, brandColors: ['#111111'], shipping: { mode: 'FLAT' }, ...o } }),
   Media: (db, _s, i, o) => db.media.create({ data: { kind: 'product', filename: `img-${i}.jpg`, contentType: 'image/jpeg', originalKey: `tenants/x/originals/${rnd()}.jpg`, declaredBytes: 10, ...o } }),
 };
 /** Run a factory against a recorder instead of the DB to obtain the exact create-data it would send. */
 const recorder: any = new Proxy({}, { get: () => ({ create: ({ data }: Row) => ({ __data: data }) }) });
 const dataFor = async (m: string, s: Seed, i: number, over: Row = {}): Promise<Row> => ((await factories[m](recorder, s, i, over)) as any).__data;
-const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media'];
+const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media', 'StoreIntake'];
 
 // ---- per-model attack metadata ----
 interface Meta {
@@ -112,6 +113,7 @@ const META: Record<string, Meta> = {
   },
   AuditLog: { touch: { action: 'touched' }, updateBlocked: true, deleteBlocked: true },
   Media: { touch: { error: 'touched' } },
+  StoreIntake: { touch: { category: 'touched' }, compound: (r) => ({ intakeKey: r.intakeKey }) },
 };
 
 describe('GATE: tenant isolation across every model', () => {
@@ -181,7 +183,7 @@ describe('GATE: tenant isolation across every model', () => {
         expect(factories[m]).toBeDefined();
         for (const k of ['A', 'B'] as const) expect(seeded[k][m].length).toBeGreaterThan(0);
       }
-      expect(MODELS).toHaveLength(16);
+      expect(MODELS).toHaveLength(17);
     });
     it('money is integer paise everywhere: no Float/Decimal field in any model', () => {
       for (const m of DMMF_MODELS) for (const f of m.fields) expect(`${m.name}.${f.name}:${f.type}`).not.toMatch(/:(Float|Decimal)$/);
@@ -458,8 +460,9 @@ describe('GATE: tenant isolation across every model', () => {
         for (const k of ['A', 'B'] as const) for (const r of seeded[k][m]) expect(ids.has(r[pkField(m)])).toBe(true);
       }
       const last = await base.auditLog.findFirst({ where: { actorId: actor.id }, orderBy: { createdAt: 'desc' } });
-      expect(last).toMatchObject({ action: 'db.AuditLog.findMany' });
-      expect((last!.meta as any).reason).toBe('gate:read-AuditLog');
+      const lastModel = MODELS[MODELS.length - 1];
+      expect(last).toMatchObject({ action: `db.${lastModel}.findMany` });
+      expect((last!.meta as any).reason).toBe(`gate:read-${lastModel}`);
     });
   });
 

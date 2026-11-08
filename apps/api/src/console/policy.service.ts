@@ -49,8 +49,9 @@ export class PolicyService {
     for (const p of pages) {
       const cur = await db.page.findUnique({ where: { tenantId_slug: { tenantId, slug: p.slug } } });
       if (!cur) {
-        await db.page.create({ data: { tenantId, slug: p.slug, title: p.title, content: p.content, isPolicy: true } });
-        out.push({ slug: p.slug, title: p.title, action: 'created' });
+        // skipDuplicates: a concurrent run that created it first wins; this one reports "kept".
+        const made = await db.page.createMany({ data: [{ tenantId, slug: p.slug, title: p.title, content: p.content, isPolicy: true }], skipDuplicates: true });
+        out.push({ slug: p.slug, title: p.title, action: made.count ? 'created' : 'kept' });
       } else if (opts.overwrite || !cur.content.trim()) {
         await db.page.update({ where: { id: cur.id }, data: { title: p.title, content: p.content, isPolicy: true } });
         out.push({ slug: p.slug, title: p.title, action: 'updated' });
