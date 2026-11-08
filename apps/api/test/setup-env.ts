@@ -17,3 +17,8 @@ process.env.S3_REGION ??= 'ap-south-1';
 process.env.S3_ACCESS_KEY_ID ??= 'test-access-key';
 process.env.S3_SECRET_ACCESS_KEY ??= 'test-secret-key';
 process.env.MEDIA_WORKER ??= '0';
+// Storefront rate limits: suites check out many times from 127.0.0.1; the dedicated rate-limit test sets tight limits itself.
+process.env.CHECKOUT_IP_LIMIT ??= '100000';
+process.env.OTP_IP_LIMIT ??= '100000';
+process.env.OTP_PHONE_LIMIT ??= '100000';
+process.env.LOOKUP_IP_LIMIT ??= '100000';

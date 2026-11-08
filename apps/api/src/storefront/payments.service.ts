@@ -58,8 +58,9 @@ export class PaymentsService {
     const event = String(body?.event ?? '');
     const payment = body?.payload?.payment?.entity;
     const id = eventId ?? `${event}:${payment?.id ?? body?.payload?.order?.entity?.id ?? 'unknown'}`;
+    if (await this.db.webhookEvent.findFirst({ where: { eventId: id }, select: { id: true } })) return { ok: true, duplicate: true };
     try {
-      await this.db.webhookEvent.create({ data: { tenantId: t.id, eventId: id, event } });
+      await this.db.webhookEvent.create({ data: { tenantId: t.id, eventId: id, event } }); // the unique index catches a concurrent redelivery
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') return { ok: true, duplicate: true };
       throw e;

@@ -15,7 +15,8 @@
     "test": "jest --runInBand",
     "test:gate": "jest --runInBand test/gate.spec.ts",
     "seed:demo": "ts-node scripts/seed-demo.ts",
-    "dev:storage": "ts-node scripts/dev-object-store.ts"
+    "dev:storage": "ts-node scripts/dev-object-store.ts",
+    "jobs:weekly": "ts-node scripts/weekly-summary.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1164.0",

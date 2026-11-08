@@ -192,6 +192,7 @@ describe('GATE: tenant isolation across every model', () => {
       const ALLOW = new Set([
         'prisma/prisma.service.ts', 'prisma/tenant-scope.ts', 'tenancy/tenant-resolver.service.ts', 'superadmin/tenants.service.ts',
         'media/media-worker.ts', // claims queued images across tenants (one SKIP LOCKED update); processing runs inside runAsTenant
+        'jobs/jobs.service.ts', // lists tenant ids to iterate (select id/name/slug only); every job body runs inside runAsTenant
       ]);
       const root = join(__dirname, '..', 'src');
       const walk = (d: string): string[] => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
