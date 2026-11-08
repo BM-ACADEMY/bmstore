@@ -138,6 +138,14 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
         ['PACKED', 'ONLINE', 'PAID', 1], ['SHIPPED', 'COD', 'PENDING', 2], ['SHIPPED', 'ONLINE', 'PAID', 3], ['DELIVERED', 'COD', 'PENDING', 4],
         ['DELIVERED', 'ONLINE', 'PAID', 6], ['DELIVERED', 'COD', 'PAID', 9], ['CANCELLED', 'ONLINE', 'REFUNDED', 11], ['RETURNED', 'COD', 'PAID', 15],
       ];
+      // Spread orders over a few hours, but "today's" ones must stay inside today's IST day (the dashboard counts from
+      // IST midnight): just after midnight IST an hours-back offset would push them into yesterday.
+      const IST_MS = 330 * 60_000;
+      const istMidnight = Math.floor((Date.now() + IST_MS) / 86_400_000) * 86_400_000 - IST_MS;
+      const orderTime = (daysAgo: number, i: number) => {
+        const t = Date.now() - daysAgo * 86_400_000 - (i % 5) * 3_600_000;
+        return new Date(daysAgo === 0 ? Math.max(t, istMidnight + i * 1000) : t);
+      };
       for (let i = 0; i < plan.length; i++) {
         const [orderStatus, paymentMode, paymentStatus, daysAgo] = plan[i];
         const c = cust[i % cust.length];
@@ -149,7 +157,7 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
         await db.order.create({ data: {
           tenantId: tenant.id, orderNo: `SLS-${1041 + i}`, customerId: c.id, items, subtotal, shipping, tax: 0, total: subtotal + shipping + (paymentMode === 'COD' ? 4900 : 0),
           paymentMode: paymentMode as any, paymentStatus: paymentStatus as any, orderStatus: orderStatus as any, address: addr,
-          createdAt: new Date(Date.now() - daysAgo * 86_400_000 - (i % 5) * 3_600_000),
+          createdAt: orderTime(daysAgo, i),
         } });
         orders++;
       }
