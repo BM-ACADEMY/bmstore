@@ -47,6 +47,24 @@ export class IntakeService {
    */
   async createFromIntake(actor: AuthActor, body: Record<string, any>): Promise<CreateFromIntakeResult> {
     const n = normalizeIntake(body);
+    return this.oneAtATime(() => this.createOrReapply(actor, n));
+  }
+
+  /**
+   * Store creation runs one at a time per API process. Creating holds an interactive transaction on the owner
+   * connection while the audited bypass writes each audit row on ANOTHER owner connection; several creations at once
+   * could take every pooled connection and wait on each other until timeout (seen on 2-core CI: pool of 5).
+   * Creation is a rare developer action, so queueing costs nothing. Across processes the unique intake_key still
+   * guarantees a single store (see the P2002 handling below).
+   */
+  private queue: Promise<unknown> = Promise.resolve();
+  private oneAtATime<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.queue.then(fn, fn);
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async createOrReapply(actor: AuthActor, n: NormalizedIntake): Promise<CreateFromIntakeResult> {
     const existing = await this.scope.platform(actor, 'find-intake', () => this.db.storeIntake.findUnique({ where: { intakeKey: n.intakeKey } }));
     if (existing) return this.reapply(actor, existing.tenantId, n);
     for (let attempt = 0; ; attempt++) {
@@ -219,7 +237,6 @@ export class IntakeService {
     const cur = await this.scope.inTenant(actor, tenantId, () => this.db.storeIntake.findUnique({ where: { tenantId } }));
     if (!cur) throw new BadRequestException('This store was not created from an intake');
     const n = normalizeIntake({ ...cur, codChargePaise: cur.codChargePaise, ...patch, intakeKey: cur.intakeKey });
-    const r = await this.reapply(actor, tenantId, n);
-    return r;
+    return this.oneAtATime(() => this.reapply(actor, tenantId, n));
   }
 }
