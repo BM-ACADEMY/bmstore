@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { QaRun } from '@prisma/client';
 
 /**
  * Lifecycle events the console raises. Item 8 routes them to outbound n8n webhooks; until then they are no-ops.
@@ -8,4 +9,5 @@ import { Injectable } from '@nestjs/common';
 export class ConsoleEvents {
   async storeCreated(_tenantId: string): Promise<void> {}
   async intakeCompleted(_tenantId: string): Promise<void> {}
+  async qaResult(_tenantId: string, _run: QaRun): Promise<void> {}
 }

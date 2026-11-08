@@ -51,6 +51,7 @@ export const SCOPES: Record<string, Scope> = {
   AuditLog: { kind: 'direct', nullable: true },
   StoreIntake: { kind: 'direct' },
   StoreDomain: { kind: 'direct' },
+  QaRun: { kind: 'direct' },
 };
 
 /** Tenants may only edit these columns of their own tenant row. Plan/status/expiry/domains: superadmin only. */

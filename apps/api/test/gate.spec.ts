@@ -64,12 +64,13 @@ const factories: Record<string, (db: any, s: Seed, i: number, over?: Row) => Pro
   AuditLog: (db, _s, i, o) => db.auditLog.create({ data: { action: `gate.seed.${i}`, meta: { i }, ...o } }),
   StoreIntake: (db, _s, i, o) => db.storeIntake.create({ data: { intakeKey: `gate-${i}-${rnd()}`, businessName: `Gate biz ${i}`, brandColors: ['#111111'], shipping: { mode: 'FLAT' }, ...o } }),
   StoreDomain: (db, _s, i, o) => db.storeDomain.create({ data: { domain: `d${i}-${rnd()}.gate-shop.in`, dnsSeen: ['CNAME x'], ...o } }),
+  QaRun: (db, _s, i, o) => db.qaRun.create({ data: { passed: i % 2 === 0, results: [{ id: 'policy_pages', status: 'pass' }], ...o } }),
   Media: (db, _s, i, o) => db.media.create({ data: { kind: 'product', filename: `img-${i}.jpg`, contentType: 'image/jpeg', originalKey: `tenants/x/originals/${rnd()}.jpg`, declaredBytes: 10, ...o } }),
 };
 /** Run a factory against a recorder instead of the DB to obtain the exact create-data it would send. */
 const recorder: any = new Proxy({}, { get: () => ({ create: ({ data }: Row) => ({ __data: data }) }) });
 const dataFor = async (m: string, s: Seed, i: number, over: Row = {}): Promise<Row> => ((await factories[m](recorder, s, i, over)) as any).__data;
-const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media', 'StoreIntake', 'StoreDomain'];
+const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media', 'StoreIntake', 'StoreDomain', 'QaRun'];
 
 // ---- per-model attack metadata ----
 interface Meta {
@@ -116,6 +117,7 @@ const META: Record<string, Meta> = {
   Media: { touch: { error: 'touched' } },
   StoreIntake: { touch: { category: 'touched' }, compound: (r) => ({ intakeKey: r.intakeKey }) },
   StoreDomain: { touch: { sslDetail: 'touched' }, compound: (r) => ({ domain: r.domain }) },
+  QaRun: { touch: { passed: false } },
 };
 
 describe('GATE: tenant isolation across every model', () => {
@@ -185,7 +187,7 @@ describe('GATE: tenant isolation across every model', () => {
         expect(factories[m]).toBeDefined();
         for (const k of ['A', 'B'] as const) expect(seeded[k][m].length).toBeGreaterThan(0);
       }
-      expect(MODELS).toHaveLength(18);
+      expect(MODELS).toHaveLength(19);
     });
     it('money is integer paise everywhere: no Float/Decimal field in any model', () => {
       for (const m of DMMF_MODELS) for (const f of m.fields) expect(`${m.name}.${f.name}:${f.type}`).not.toMatch(/:(Float|Decimal)$/);

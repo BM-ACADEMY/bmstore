@@ -121,6 +121,7 @@ model Tenant {
   usage               TenantUsage?
   intake              StoreIntake?
   domainMapping       StoreDomain?
+  qaRuns              QaRun[]
 
   @@index([status, expiresAt])
   @@map("tenants")
@@ -490,4 +491,22 @@ model StoreDomain {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("store_domains")
+}
+
+// Phase 5: one automated QA run (structured pass/fail per check). Go-live needs the latest run to have passed.
+model QaRun {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  passed      Boolean
+  /// [{ id, label, status: pass|fail|skipped, detail, durationMs }]
+  results     Json
+  /// superadmin who ran it; null when a job did
+  triggeredBy String?   @map("triggered_by") @db.Uuid
+  startedAt   DateTime  @default(now()) @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, startedAt])
+  @@map("qa_runs")
 }
