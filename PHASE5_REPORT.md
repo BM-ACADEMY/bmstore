@@ -3,9 +3,9 @@
 Internal tools so the developer can deliver a client store in about 3 hours. **Not** self-serve and not automatic
 provisioning: every store is created, built, checked and switched live by the developer. No demo content was added.
 
-Status: **all 9 items built, one or more commits each. 613 of 614 tests pass** (26 suites; Phase 2 ended at 455). The
-one failure is the pre-existing `seed.spec.ts` assertion `dash.today.orders === 3`. It already failed on the untouched
-branch before this work: the seed dates "today's" orders in a way that breaks near IST midnight. Not touched here.
+Status: **all 9 items built, one or more commits each. 614 of 614 tests pass** (26 suites; Phase 2 ended at 455).
+`seed.spec.ts` used to fail between 00:00 and 04:00 IST (the demo seed backdated "today's" orders by up to 4 hours, so
+they landed in yesterday); that also turned CI red on unrelated branches. Fixed in `fix(seed): keep today's demo orders …`.
 The tenant-isolation gate is green: **414 tests**, now covering **21 models**.
 
 Scope respected: changes are in `apps/api`, the new `apps/console`, one **new file** in the admin
