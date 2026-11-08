@@ -82,10 +82,12 @@ export class BuildService {
   catalogSummary(actor: AuthActor, tenantId: string) {
     return this.scope.inTenant(actor, tenantId, async () => {
       const db = this.prisma.db;
-      const [products, live, withImages, categories, images] = await Promise.all([
-        db.product.count(), db.product.count({ where: { status: 'ACTIVE' } }), db.product.count({ where: { images: { isEmpty: false } } }),
-        db.category.count(), db.media.count({ where: { status: 'READY' } }),
-      ]);
+      // Sequential on purpose: each scoped query is its own pinned transaction; firing them together can drain the pool.
+      const products = await db.product.count();
+      const live = await db.product.count({ where: { status: 'ACTIVE' } });
+      const withImages = await db.product.count({ where: { images: { isEmpty: false } } });
+      const categories = await db.category.count();
+      const images = await db.media.count({ where: { status: 'READY' } });
       return { products, live, withImages, withoutImages: products - withImages, categories, images };
     });
   }

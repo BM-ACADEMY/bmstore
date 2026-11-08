@@ -105,12 +105,12 @@ export class StoresService {
       const intake = await this.db.storeIntake.findUnique({ where: { tenantId: id } });
       const owner = await this.db.user.findFirst({ where: { role: 'store_owner' }, orderBy: { createdAt: 'asc' }, select: { email: true, isActive: true } });
       const policies = await this.db.page.findMany({ where: { isPolicy: true }, select: { slug: true, title: true } });
-      const audit = await this.db.auditLog.findMany({ orderBy: { createdAt: 'desc' }, take: 15, select: { action: true, createdAt: true, actorId: true } });
+      const audit = await this.db.auditLog.findMany({ where: { NOT: { action: { startsWith: 'db.' } } }, orderBy: { createdAt: 'desc' }, take: 15, select: { action: true, createdAt: true, actorId: true } });
       return { intake: intake ? { ...intake, missing: missingFields(intake as any) } : null, owner, policies, audit };
     }, actor);
     return {
       ...card,
-      tenant: safeTenant(row),
+      tenant: (({ intake, domainMapping, qaRuns, usage, ...t }) => safeTenant(t as Tenant))(row), // relations out: usage.mediaBytes is a BigInt
       adminUrl: this.scope.adminUrl(row),
       previewUrl: card.url,
       canGoLive: this.goLiveBlocker(row) === null,

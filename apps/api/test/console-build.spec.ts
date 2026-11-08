@@ -87,6 +87,8 @@ describe('console: product import, bulk images, theme apply', () => {
     expect(usage.media.usedBytes).toBeGreaterThan(0);
     expect(usage.products).toMatchObject({ used: 3, limit: 2000 });
     expect(usage.media.limitMb).toBe(10240);
+    // store detail serialises once tenant_usage exists (media_bytes is a BigInt)
+    await s.call('get', `/superadmin/console/stores/${A.id}`).expect(200);
     const cat = (await s.call('get', `/superadmin/console/stores/${A.id}/catalog`).expect(200)).body;
     expect(cat).toMatchObject({ products: 3, withImages: 1, images: 1 });
 
