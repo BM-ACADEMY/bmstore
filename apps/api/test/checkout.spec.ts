@@ -199,7 +199,7 @@ describe('checkout and orders', () => {
     const wa = app.get(ConsoleWhatsAppSender);
     const n0 = wa.outbox.length;
     expect(await jobs.weeklySummaries(new Date())).toBeGreaterThanOrEqual(1);
-    const mine = wa.outbox.slice(n0).filter((m) => m.kind === 'owner.weekly_summary' && m.to === '919876543210');
+    const mine = wa.outbox.slice(n0).filter((m) => m.kind === 'owner.weekly_summary' && m.text.startsWith(`${S.t.name}:`)); // other stores (e.g. the seeded demo) share the demo WhatsApp number
     expect(mine).toHaveLength(1);
     expect(mine[0].text).toMatch(/Orders: \d+ · Sales: ₹/);
     expect(await jobs.weeklySummaries(new Date())).toBe(0); // same week, same stores: nothing resent

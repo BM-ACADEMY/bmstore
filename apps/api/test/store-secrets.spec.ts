@@ -90,7 +90,7 @@ describe('razorpay secrets: encrypted at rest, never returned, never logged', ()
       me = await api().get('/store/me').set('Host', host(A)).set('Authorization', `Bearer ${tokA}`);
     } finally { stopCapture(); }
     expect(res.status).toBe(204);
-    expect(masked.body).toEqual({ configured: true, keyId: 'rzp_live_••••3456' });
+    expect(masked.body).toEqual({ configured: true, keyId: 'rzp_live_••••3456', webhookConfigured: false });
     for (const body of [JSON.stringify(res.body), JSON.stringify(masked.body), JSON.stringify(me.body)]) {
       expect(body).not.toContain(KEY_SECRET);
       expect(body).not.toMatch(/razorpay.*enc/i);

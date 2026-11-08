@@ -205,7 +205,7 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
         await db.order.create({ data: {
           tenantId: tenant.id, orderNo: `SLS-${1041 + i}`, customerId: c.id, items, subtotal, shipping, tax: 0, total: subtotal + shipping + (paymentMode === 'COD' ? 4900 : 0),
           paymentMode: paymentMode as any, paymentStatus: paymentStatus as any, orderStatus: orderStatus as any, address: addr,
-          createdAt: new Date(Date.now() - daysAgo * 86_400_000 - (i % 5) * 3_600_000),
+          createdAt: new Date(Date.now() - daysAgo * 86_400_000 - (i % 5) * 600_000), // minutes, so "today" orders stay today around midnight IST
         } });
         orders++;
       }

@@ -1,4 +1,5 @@
-// Test defaults. CI / local shells can override any of these.
+// Test defaults. CI / local shells can override any of these. Imported by global-setup.ts before anything Prisma,
+// because the generated client reads apps/api/.env on import and would otherwise point the suite at the dev database.
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL ??= 'postgresql://bmstore_app:bmstore_app@localhost:5432/bmstore_test?schema=public'; // RLS-enforced app role
 process.env.DATABASE_ADMIN_URL ??= 'postgresql://bmstore:bmstore@localhost:5432/bmstore_test?schema=public'; // owner: migrations + bypass

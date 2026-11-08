@@ -7,7 +7,6 @@
  * with that password, is NOT a superuser, has NOBYPASSRLS, owns nothing, and may read/write every table in the schema
  * (existing ones and those future migrations create). Idempotent; run it after `prisma migrate deploy` on a new database.
  */
-import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const ident = (s: string) => `"${s.replace(/"/g, '""')}"`;
@@ -50,6 +49,7 @@ export async function ensureAppRole(adminUrl = process.env.DATABASE_ADMIN_URL, a
 }
 
 if (require.main === module) {
+  require('dotenv/config'); // only as a CLI: tests import ensureAppRole() and must not pick up apps/api/.env
   ensureAppRole()
     .then((u) => console.log(`application role "${u}" is ready (LOGIN, NOSUPERUSER, NOBYPASSRLS, owns nothing)`))
     .catch((e) => { console.error('db-app-role failed:', e instanceof Error ? e.message : 'unknown error'); process.exit(1); });

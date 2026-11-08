@@ -21,10 +21,12 @@ export interface LineTotals { key: string; qty: number; unitPrice: number; total
 export interface Totals { subtotal: number; discount: number; shipping: number; codCharge: number; tax: number; total: number; lines: LineTotals[]; shippingReason: 'city' | 'flat' | 'free' | 'free_above' }
 
 export class PricingError extends Error {
-  constructor(readonly code: 'EMPTY' | 'BAD_QTY' | 'COD_DISABLED' | 'COUPON_EXPIRED' | 'COUPON_MIN' | 'COUPON_LIMIT' | 'COUPON_INVALID', message: string) { super(message); }
+  constructor(readonly code: 'EMPTY' | 'BAD_QTY' | 'COD_DISABLED' | 'COUPON_EXPIRED' | 'COUPON_MIN' | 'COUPON_LIMIT' | 'COUPON_INVALID' | 'TOO_LARGE', message: string) { super(message); }
 }
 
 const MAX_QTY = 50;
+/** Amounts are 32-bit Int paise in the database (₹2,14,74,836.47). A single order above ₹2 crore is refused rather than overflow. */
+const MAX_TOTAL = 2_000_000_000;
 
 /** Shipping for a (post-discount) merchandise amount. City overrides win outright; FREE_ABOVE compares the discounted subtotal. */
 export function shippingFor(rules: ShippingRules, merchandise: number, city: string | null): { amount: number; reason: Totals['shippingReason'] } {
@@ -88,6 +90,7 @@ export function computeTotals(input: TotalsInput): Totals {
   const codCharge = input.paymentMode === 'COD' ? Math.max(0, input.cod.charge) : 0;
   const tax = lines.reduce((a, l) => a + l.tax, 0);
   const total = merchandise + ship.amount + codCharge;
+  if (subtotal > MAX_TOTAL || total > MAX_TOTAL) throw new PricingError('TOO_LARGE', 'This order is too large to place online, please contact the store');
   return { subtotal, discount, shipping: ship.amount, codCharge, tax, total, lines, shippingReason: ship.reason };
 }
 
