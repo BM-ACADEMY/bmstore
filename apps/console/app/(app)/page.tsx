@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { PageTitle } from '@/components/shell';
+import { JobsCard } from '@/components/jobs-card';
 import { Empty, ErrorNote, Spinner, StageBadge, STAGE_STYLE, useApi } from '@/components/ui';
 
 const SEV = { high: 'border-l-bad', medium: 'border-l-warn', low: 'border-l-brand' } as const;
@@ -41,6 +42,7 @@ export default function TodayPage() {
               ))}
             </ul>
           )}
+          <JobsCard />
         </>
       )}
     </>

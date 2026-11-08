@@ -123,6 +123,7 @@ model Tenant {
   domainMapping       StoreDomain?
   qaRuns              QaRun[]
   refundCases         RefundCase[]
+  outboxEvents        OutboxEvent[]
 
   @@index([status, expiresAt])
   @@map("tenants")
@@ -551,4 +552,31 @@ model RefundCase {
   @@index([tenantId, createdAt])
   @@index([status])
   @@map("refund_cases")
+}
+
+// Phase 5: every notification (stubbed WhatsApp/email) and outbound webhook a store causes, recorded once.
+// dedupe_key makes jobs idempotent: a reminder for (tenant, key) is only ever sent once, whatever re-runs.
+model OutboxEvent {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  /// notice | webhook
+  kind      String
+  /// e.g. intake.chaser, renewal.reminder, store.created
+  event     String
+  dedupeKey String?   @map("dedupe_key")
+  /// no secrets, ever
+  payload   Json      @default("{}")
+  /// pending | sent | stubbed | skipped | failed
+  status    String    @default("pending")
+  attempts  Int       @default(0)
+  lastError String?   @map("last_error")
+  createdAt DateTime  @default(now()) @map("created_at")
+  sentAt    DateTime? @map("sent_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dedupeKey])
+  @@index([tenantId, createdAt])
+  @@index([kind, status])
+  @@map("outbox_events")
 }

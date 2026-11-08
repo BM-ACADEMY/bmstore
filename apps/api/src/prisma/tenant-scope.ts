@@ -53,6 +53,7 @@ export const SCOPES: Record<string, Scope> = {
   StoreDomain: { kind: 'direct' },
   QaRun: { kind: 'direct' },
   RefundCase: { kind: 'direct' },
+  OutboxEvent: { kind: 'direct' },
 };
 
 /** Tenants may only edit these columns of their own tenant row. Plan/status/expiry/domains: superadmin only. */

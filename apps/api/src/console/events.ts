@@ -11,4 +11,5 @@ export class ConsoleEvents {
   async intakeCompleted(_tenantId: string): Promise<void> {}
   async qaResult(_tenantId: string, _run: QaRun): Promise<void> {}
   async wentLive(_tenantId: string): Promise<void> {}
+  async renewalDue(_tenantId: string, _day: number, _expiresAt: Date): Promise<void> {}
 }
