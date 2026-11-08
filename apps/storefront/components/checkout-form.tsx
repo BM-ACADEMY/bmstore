@@ -110,7 +110,7 @@ export function CheckoutForm() {
     }
   };
 
-  if (!cart.ready) return <div className="min-h-[50dvh]" aria-busy="true" />;
+  if (!cart.ready || !cart.lines.length) return <div className="min-h-[60dvh]" aria-busy="true" />; // empty carts are redirected to /cart above; keep the height so nothing jumps
   const Err = ({ k }: { k: string }) => (fieldErrors[k] ? <span className="block mt-1 text-xs text-bad">{fieldErrors[k]}</span> : null);
   const inputProps = (k: keyof typeof f) => ({ value: f[k], onChange: set(k), 'aria-invalid': fieldErrors[k] ? true : undefined, className: `field ${fieldErrors[k] ? 'border-bad' : ''}` });
 

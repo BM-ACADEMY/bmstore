@@ -5,6 +5,8 @@ const imageHosts = (process.env.IMAGE_HOSTS ?? 'localhost,127.0.0.1').split(',')
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Inline the (small) stylesheet into the HTML: one fewer render-blocking round trip on 4G.
+  experimental: { inlineCss: true },
   images: {
     // Product photos live in the store's bucket/CDN; next/image serves WebP/AVIF variants sized for the viewport.
     remotePatterns: imageHosts.flatMap((hostname) => [{ protocol: 'https' as const, hostname }, { protocol: 'http' as const, hostname }]),

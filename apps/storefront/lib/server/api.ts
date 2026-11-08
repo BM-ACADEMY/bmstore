@@ -3,7 +3,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { headers } from 'next/headers';
 
-export const API_URL = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+export const API_URL = (process.env.API_URL ?? process.env.API_INTERNAL_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 
 export class StoreApiError extends Error {
   constructor(readonly status: number, message: string, readonly body?: unknown) { super(message); }

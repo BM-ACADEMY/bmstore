@@ -15,7 +15,7 @@ import './globals.css';
 
 // Self-hosted variable fonts (public/fonts): no third-party connection, preloaded, swap display.
 const inter = localFont({ src: '../public/fonts/Inter.woff2', variable: '--font-inter', display: 'swap', weight: '100 900' });
-const playfair = localFont({ src: '../public/fonts/PlayfairDisplay.woff2', variable: '--font-playfair', display: 'swap', weight: '400 900' });
+const playfair = localFont({ src: '../public/fonts/PlayfairDisplay.woff2', variable: '--font-playfair', display: 'swap', weight: '400 900', preload: false }); // headings swap in; keeps the LCP image first on 4G
 const tamil = localFont({ src: '../public/fonts/NotoSansTamil.woff2', variable: '--font-tamil', display: 'swap', weight: '100 900', preload: false });
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' };

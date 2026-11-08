@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export const config = { runtime: 'nodejs', matcher: ['/((?!_next/|fonts/|favicon\\.ico|icon\\.svg|api/|robots\\.txt|sitemap\\.xml).*)'] };
 
-const API_URL = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+const API_URL = (process.env.API_URL ?? process.env.API_INTERNAL_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const TTL_MS = 30_000;
 type Status = { kind: 'ok'; name: string; slug: string; status: string } | { kind: 'unknown' } | { kind: 'blocked'; message: string } | { kind: 'down' };
 const cache = new Map<string, { at: number; value: Status }>();

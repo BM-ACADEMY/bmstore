@@ -12,12 +12,12 @@ interface Palette { bg: string; surface: string; ink: string; ink2: string; ink3
 
 /** V1 Fashion/Textile is the default: maroon, gold (decoration only), cream, ink. */
 export const PALETTES: Record<string, Palette> = {
-  'v1-textile': { bg: '#FBF5EA', surface: '#FFFCF5', ink: '#2B1B17', ink2: '#5B4A45', ink3: '#857770', line: '#E8DCC8', primary: '#7A1F2B', secondary: '#C9973B' },
-  classic: { bg: '#F7F7F5', surface: '#FFFFFF', ink: '#111827', ink2: '#4B5563', ink3: '#6B7280', line: '#E5E7EB', primary: '#111827', secondary: '#6B7280' },
-  teal: { bg: '#F4F7F6', surface: '#FFFFFF', ink: '#13231F', ink2: '#3F5651', ink3: '#6B7F7A', line: '#D9E4E1', primary: '#0F766E', secondary: '#C9731A' },
-  maroon: { bg: '#FBF5EA', surface: '#FFFCF5', ink: '#2B1B17', ink2: '#5B4A45', ink3: '#857770', line: '#E8DCC8', primary: '#7F1D1D', secondary: '#B45309' },
-  indigo: { bg: '#F5F5FA', surface: '#FFFFFF', ink: '#1C1B33', ink2: '#4A4869', ink3: '#737190', line: '#E0E0EC', primary: '#3730A3', secondary: '#DB2777' },
-  forest: { bg: '#F5F7F2', surface: '#FFFFFF', ink: '#172116', ink2: '#3F4D3D', ink3: '#6E7B6B', line: '#DCE3D6', primary: '#14532D', secondary: '#CA8A04' },
+  'v1-textile': { bg: '#FBF5EA', surface: '#FFFCF5', ink: '#2B1B17', ink2: '#5B4A45', ink3: '#6B5E58', line: '#E8DCC8', primary: '#7A1F2B', secondary: '#C9973B' },
+  classic: { bg: '#F7F7F5', surface: '#FFFFFF', ink: '#111827', ink2: '#4B5563', ink3: '#5F6975', line: '#E5E7EB', primary: '#111827', secondary: '#6B7280' },
+  teal: { bg: '#F4F7F6', surface: '#FFFFFF', ink: '#13231F', ink2: '#3F5651', ink3: '#5C6F6A', line: '#D9E4E1', primary: '#0F766E', secondary: '#C9731A' },
+  maroon: { bg: '#FBF5EA', surface: '#FFFCF5', ink: '#2B1B17', ink2: '#5B4A45', ink3: '#6B5E58', line: '#E8DCC8', primary: '#7F1D1D', secondary: '#B45309' },
+  indigo: { bg: '#F5F5FA', surface: '#FFFFFF', ink: '#1C1B33', ink2: '#4A4869', ink3: '#64627F', line: '#E0E0EC', primary: '#3730A3', secondary: '#DB2777' },
+  forest: { bg: '#F5F7F2', surface: '#FFFFFF', ink: '#172116', ink2: '#3F4D3D', ink3: '#5E6B5B', line: '#DCE3D6', primary: '#14532D', secondary: '#CA8A04' },
 };
 
 /** Font pairs; the font files are self-hosted (public/fonts) and exposed by app/layout.tsx as --font-* variables. */

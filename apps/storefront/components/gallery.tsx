@@ -14,7 +14,7 @@ export function Gallery({ images, name }: { images: string[]; name: string }) {
       <div ref={ref} className="flex snap-x snap-mandatory overflow-x-auto rounded-card-lg [scrollbar-width:none] scroll-x !gap-0 !pb-0 !mx-0 !px-0" onScroll={(e) => { const el = e.currentTarget; const n = Math.round(el.scrollLeft / el.clientWidth); if (n !== i) setI(n); }} aria-roledescription="carousel">
         {images.map((src, n) => (
           <div key={src} className="relative aspect-saree w-full shrink-0 snap-start bg-primary-soft" aria-roledescription="slide" aria-label={`${n + 1} / ${images.length}`}>
-            <Image src={src} alt={`${name} ${n + 1}`} fill priority={n === 0} loading={n === 0 ? 'eager' : 'lazy'} sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" />
+            <Image src={src} alt={`${name} ${n + 1}`} fill priority={n === 0} fetchPriority={n === 0 ? 'high' : undefined} loading={n === 0 ? 'eager' : 'lazy'} sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" />
           </div>
         ))}
       </div>

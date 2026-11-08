@@ -7,8 +7,8 @@ import Image from 'next/image';
 export function ProductImage({ src, alt, sizes, priority = false, className = '', fill = true, width, height }: { src: string | null | undefined; alt: string; sizes: string; priority?: boolean; className?: string; fill?: boolean; width?: number; height?: number }) {
   if (!src) return <Placeholder label={alt} className={className} />;
   return fill
-    ? <Image src={src} alt={alt} fill sizes={sizes} priority={priority} loading={priority ? 'eager' : 'lazy'} className={`object-cover ${className}`} />
-    : <Image src={src} alt={alt} width={width ?? 800} height={height ?? 1000} sizes={sizes} priority={priority} loading={priority ? 'eager' : 'lazy'} className={`object-cover ${className}`} />;
+    ? <Image src={src} alt={alt} fill sizes={sizes} priority={priority} fetchPriority={priority ? 'high' : undefined} loading={priority ? 'eager' : 'lazy'} className={`object-cover ${className}`} />
+    : <Image src={src} alt={alt} width={width ?? 800} height={height ?? 1000} sizes={sizes} priority={priority} fetchPriority={priority ? 'high' : undefined} loading={priority ? 'eager' : 'lazy'} className={`object-cover ${className}`} />;
 }
 
 export function Placeholder({ label, className = '' }: { label: string; className?: string }) {

@@ -12,14 +12,14 @@ export function ProductCard({ p, priority = false, labels }: { p: CardProduct; p
   const available = inStock(p);
   const optionCount = p.variants.length;
   return (
-    <Link href={`/p/${p.slug}`} className="group block" aria-label={p.name}>
+    <Link href={`/p/${p.slug}`} className="group block">
       <div className="relative aspect-saree overflow-hidden rounded-card bg-primary-soft">
         <ProductImage src={p.images[0]} alt={p.name} sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" priority={priority} className="transition duration-500 group-hover:scale-[1.03]" />
         {off > 0 && available && <span className="absolute left-2 top-2 rounded-full bg-surface/95 px-2.5 py-1 text-[11px] font-semibold text-primary-text shadow-card">{labels.off(off)}</span>}
         {!available && <span className="absolute inset-x-0 bottom-0 bg-ink/70 py-1.5 text-center text-xs font-semibold text-bg">{labels.soldOut}</span>}
       </div>
       <div className="mt-2.5 px-0.5">
-        <h3 className="text-[15px] leading-snug text-ink line-clamp-2 min-h-[2.6em]">{p.name}</h3>
+        <div className="text-[15px] leading-snug text-ink line-clamp-2 min-h-[2.6em]">{p.name}</div>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="font-semibold text-ink">{rupees(p.price)}</span>
           {p.mrp > p.price && <span className="text-sm price-strike">{rupees(p.mrp)}</span>}
