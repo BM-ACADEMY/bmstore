@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { Job, Queue, Worker } from 'bullmq';
 import { AppConfig } from '../config/app-config';
 import { JOB_NAMES, JobName, JobsService } from './jobs.service';
+import { MAX_WEBHOOK_ATTEMPTS, WebhookService } from '../console/webhooks';
 
 export const QUEUE = 'bmstore-jobs';
 const TZ = 'Asia/Kolkata';
@@ -37,7 +38,7 @@ export class JobsScheduler implements OnModuleInit, OnModuleDestroy {
   private worker?: Worker;
   readonly handlers = new Map<string, (data: any) => Promise<unknown>>();
 
-  constructor(private readonly cfg: AppConfig, private readonly jobs: JobsService) {}
+  constructor(private readonly cfg: AppConfig, private readonly jobs: JobsService, private readonly webhooks: WebhookService) {}
 
   async onModuleInit() {
     if (!this.cfg.jobsEnabled) return;
@@ -50,6 +51,12 @@ export class JobsScheduler implements OnModuleInit, OnModuleDestroy {
     for (const name of JOB_NAMES) {
       await this.queue.upsertJobScheduler(name, { pattern: SCHEDULE[name], tz: TZ }, { name, data: {}, opts: { attempts: 3, backoff: { type: 'exponential', delay: 60_000 } } });
     }
+    // Webhook delivery on the worker: retried with exponential backoff (1 min, 2, 4, 8, 16), then left "failed".
+    this.handlers.set('deliver-webhook', (d: { eventId: string; tenantId: string }) => this.webhooks.deliver(d.eventId, d.tenantId, true));
+    const q = this.queue;
+    this.webhooks.useQueue(async (eventId, tenantId) => {
+      await q.add('deliver-webhook', { eventId, tenantId }, { jobId: `wh-${eventId}`, attempts: MAX_WEBHOOK_ATTEMPTS, backoff: { type: 'exponential', delay: 60_000 } });
+    });
     this.worker = new Worker(QUEUE, (job: Job) => this.process(job), { connection, concurrency: 2 });
     this.worker.on('failed', (job, err) => this.log.error(`job ${job?.name} failed: ${err?.message?.slice(0, 200)}`));
     this.log.log(`scheduled ${JOB_NAMES.length} jobs (${TZ})`);

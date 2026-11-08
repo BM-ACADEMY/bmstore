@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card, ErrorNote, Kv, Meter, Pill, useAction } from '@/components/ui';
 import { api } from '@/lib/api';
+import { EventsCard } from './events';
 import { date, dateTime } from '@/lib/format';
 
 const ACTION_LABEL: Record<string, string> = {
@@ -71,6 +72,8 @@ export function Overview({ s, reload, goTo }: { s: any; reload: () => void; goTo
           <ErrorNote error={error} />
         </div>
       </Card>
+
+      <EventsCard id={s.id} />
 
       <Card title="Recent activity" className="lg:col-span-2">
         {s.audit.length === 0 ? <p className="text-sm text-ink-2">Nothing yet.</p> : (

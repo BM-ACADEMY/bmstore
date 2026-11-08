@@ -18,6 +18,8 @@ import { StoresService } from './stores.service';
 import { RefundService } from './refund.service';
 import { RazorpayRefundGateway, RefundGateway } from './refund-gateway';
 import { OutboxService } from './outbox';
+import { WebhookService } from './webhooks';
+import { EventsController } from './events.controller';
 import { DnsResolver, NodeDnsResolver, NodeTlsProbe, TlsProbe } from './net-probes';
 import { ConsoleController } from './console.controller';
 import { ConsoleScope } from './console-scope';
@@ -27,10 +29,10 @@ import { PolicyService } from './policy.service';
 
 @Module({
   imports: [AuthModule, SuperadminModule, ImportModule, MediaModule, LimitsModule, SettingsModule, CryptoModule],
-  controllers: [ConsoleController, BuildController, DomainController, QaController, StoresController, ImpersonationRedeemController],
+  controllers: [ConsoleController, BuildController, DomainController, QaController, StoresController, ImpersonationRedeemController, EventsController],
   providers: [ConsoleScope, PolicyService, IntakeService, ConsoleEvents, BuildService, DomainService, { provide: DnsResolver, useClass: NodeDnsResolver }, { provide: TlsProbe, useClass: NodeTlsProbe },
     QaService, { provide: StorefrontProbe, useClass: UnmergedStorefrontProbe }, { provide: RazorpayProbe, useClass: HttpRazorpayProbe },
-    StoresService, RefundService, OutboxService, { provide: RefundGateway, useClass: RazorpayRefundGateway }],
-  exports: [ConsoleScope, PolicyService, IntakeService, ConsoleEvents, BuildService, DomainService, QaService, StoresService, RefundService, OutboxService],
+    StoresService, RefundService, OutboxService, WebhookService, { provide: RefundGateway, useClass: RazorpayRefundGateway }],
+  exports: [ConsoleScope, PolicyService, IntakeService, ConsoleEvents, BuildService, DomainService, QaService, StoresService, RefundService, OutboxService, WebhookService],
 })
 export class ConsoleModule {}
