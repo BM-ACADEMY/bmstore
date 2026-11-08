@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * page; BUILDING stores are served as previews with `X-Robots-Tag: noindex` (the layout adds the meta tag + ribbon).
  * Runs on the Node.js runtime so the real Host header can be sent upstream (undici's fetch drops it).
  */
-export const config = { runtime: 'nodejs', matcher: ['/((?!_next/|fonts/|favicon\\.ico|icon\\.svg|api/).*)'] };
+export const config = { runtime: 'nodejs', matcher: ['/((?!_next/|fonts/|favicon\\.ico|icon\\.svg|api/|robots\\.txt|sitemap\\.xml).*)'] };
 
 const API_URL = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const TTL_MS = 30_000;

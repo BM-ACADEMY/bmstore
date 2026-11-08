@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
 import { PreviewRibbon } from '@/components/preview-ribbon';
+import { UnavailableContent } from '@/components/unavailable';
 import { CartProvider } from '@/lib/cart';
 import { StoreApiError, storeHost } from '@/lib/server/api';
 import { absoluteUrl, getBootstrap, getT } from '@/lib/server/store';
@@ -45,14 +46,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   try {
     boot = await getBootstrap();
   } catch (e) {
-    // Unknown / blocked hosts are rewritten to /unavailable by the middleware; this is the API-down case.
+    // Unknown / blocked hosts are rewritten to /unavailable by the middleware (which renders as `children` here);
+    // anything else reaching this branch is the API being down.
     const status = e instanceof StoreApiError ? e.status : 503;
+    const onUnavailable = ((await headers()).get('x-store-path') ?? '') === '/unavailable' || (await headers()).get('x-middleware-rewrite')?.includes('/unavailable');
+    const kind = status === 404 ? 'unknown' : status === 403 ? 'blocked' : 'down';
     return (
       <html lang={lang} className={fontClass} style={themeVars(null) as React.CSSProperties}>
         <head><meta name="robots" content="noindex, nofollow" /></head>
-        <body><main className="min-h-dvh grid place-items-center p-6 text-center">
-          <div><h1 className="font-heading text-3xl text-primary-text">{t(status === 404 ? 'unavailable.unknown.title' : status === 403 ? 'unavailable.blocked.title' : 'unavailable.down.title')}</h1><p className="mt-3 text-ink-2">{t(status === 404 ? 'unavailable.unknown.body' : status === 403 ? 'unavailable.blocked.body' : 'unavailable.down.body')}</p></div>
-        </main></body>
+        <body>{onUnavailable ? children : <UnavailableContent kind={kind} />}</body>
       </html>
     );
   }
