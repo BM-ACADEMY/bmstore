@@ -18,8 +18,15 @@ export class NotificationsService {
   constructor(private readonly prisma: PrismaService, private readonly wa: WhatsAppSender, private readonly email: EmailSender) {}
 
   private tenant(): TenantInfo | undefined { return RequestContext.get()?.tenant; }
-  private async ownerContacts(): Promise<{ phone: string | null; emails: string[] }> {
+  /** Store contact numbers: from the request context, or from the row when running in a job (runAsTenant has no TenantInfo). */
+  private async storeRow(): Promise<{ name: string; whatsappNumber: string | null; supportPhone: string | null } | undefined> {
     const t = this.tenant();
+    if (t) return t;
+    const id = RequestContext.tenantId();
+    return id ? (await this.prisma.db.tenant.findUnique({ where: { id }, select: { name: true, whatsappNumber: true, supportPhone: true } })) ?? undefined : undefined;
+  }
+  private async ownerContacts(): Promise<{ phone: string | null; emails: string[] }> {
+    const t = await this.storeRow();
     const owners = await this.prisma.db.user.findMany({ where: { role: 'store_owner', isActive: true }, select: { email: true, phone: true } });
     return { phone: t?.whatsappNumber ?? t?.supportPhone ?? owners.find((o) => o.phone)?.phone ?? null, emails: owners.map((o) => o.email) };
   }
