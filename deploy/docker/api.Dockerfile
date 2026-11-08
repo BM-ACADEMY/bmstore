@@ -57,6 +57,8 @@ FROM base AS runtime
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
+# fonts for the GST invoice PDFs (src/storefront/invoice.service.ts resolves ../../assets from dist/)
+COPY --from=build /app/apps/api/assets ./apps/api/assets
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/prisma/schema.prisma ./apps/api/prisma/schema.prisma
 USER node
