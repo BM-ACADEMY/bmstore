@@ -78,6 +78,10 @@ export class AppConfig {
   readonly platformRazorpayKeyId = process.env.PLATFORM_RAZORPAY_KEY_ID || undefined;
   readonly platformRazorpayKeySecret = process.env.PLATFORM_RAZORPAY_KEY_SECRET || undefined;
   readonly allowLiveRefunds = process.env.RAZORPAY_ALLOW_LIVE_REFUNDS === '1';
+  /** Seller on credit notes (the platform business). */
+  readonly platformLegalName = process.env.PLATFORM_LEGAL_NAME || 'BM Techx';
+  readonly platformGstin = process.env.PLATFORM_GSTIN || undefined;
+  readonly platformAddress = process.env.PLATFORM_ADDRESS || undefined;
   /** Developer contact for alerts (stubbed WhatsApp / email). */
   readonly developerWhatsapp = process.env.DEVELOPER_WHATSAPP || '919403892971';
   readonly developerEmail = process.env.DEVELOPER_EMAIL || undefined;

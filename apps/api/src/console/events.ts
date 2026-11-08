@@ -10,4 +10,5 @@ export class ConsoleEvents {
   async storeCreated(_tenantId: string): Promise<void> {}
   async intakeCompleted(_tenantId: string): Promise<void> {}
   async qaResult(_tenantId: string, _run: QaRun): Promise<void> {}
+  async wentLive(_tenantId: string): Promise<void> {}
 }

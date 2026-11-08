@@ -122,6 +122,7 @@ model Tenant {
   intake              StoreIntake?
   domainMapping       StoreDomain?
   qaRuns              QaRun[]
+  refundCases         RefundCase[]
 
   @@index([status, expiresAt])
   @@map("tenants")
@@ -509,4 +510,45 @@ model QaRun {
 
   @@index([tenantId, startedAt])
   @@map("qa_runs")
+}
+
+// Phase 5: refund helper for the store-delivery guarantee (platform -> client). The rule is applied in code
+// (src/console/refund-rule.ts), a human approves, then the Razorpay refund API (test mode) and a credit note.
+model RefundCase {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id") @db.Uuid
+  /// not_delivered | change_of_mind | other
+  reason                 String
+  note                   String?
+  /// Working days of documented client-side delay (late details, Razorpay KYC): they push the deadline out.
+  clientDelayWorkingDays Int       @default(0) @map("client_delay_working_days")
+  clientDelayNote        String?   @map("client_delay_note")
+  amountPaidPaise        Int       @map("amount_paid_paise") // what the client paid us, GST included
+  gstPaise               Int       @map("gst_paise")
+  /// Razorpay payment id of the client's setup fee on the platform account (pay_...)
+  paymentId              String?   @map("payment_id")
+  invoiceRef             String?   @map("invoice_ref")
+  eligible               Boolean
+  /// the rule's verdict at the last evaluation: { eligible, rule, explanation[], deadline, refundPaise }
+  decision               Json
+  /// open | processing | refunded | rejected | failed
+  status                 String    @default("open")
+  createdBy              String?   @map("created_by") @db.Uuid
+  approvedBy             String?   @map("approved_by") @db.Uuid
+  approvedAt             DateTime? @map("approved_at")
+  /// approval + 7 working days
+  processBy              DateTime? @map("process_by")
+  refundId               String?   @map("refund_id")
+  refundStub             Boolean   @default(false) @map("refund_stub")
+  refundError            String?   @map("refund_error")
+  creditNoteNo           String?   @unique @map("credit_note_no")
+  creditNote             Json?     @map("credit_note")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([status])
+  @@map("refund_cases")
 }
