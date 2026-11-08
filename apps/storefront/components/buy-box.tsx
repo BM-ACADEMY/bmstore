@@ -78,7 +78,7 @@ export function BuyBox({ p, url }: { p: BuyProduct; url: string }) {
           <span className="w-8 text-center font-semibold" aria-live="polite">{qty}</span>
           <button type="button" className="tap w-12 text-xl" aria-label="+" onClick={() => setQty((q) => Math.min(Math.min(stock, 20), q + 1))} disabled={qty >= Math.min(stock, 20)}>+</button>
         </div>
-        <button type="button" className="btn-primary flex-1" disabled={out || needsChoice} onClick={add}>{added ? <><CheckIcon className="h-5 w-5" />{t('product.added')}</> : t('product.addToCart')}</button>
+        <button type="button" className={needsChoice && !out ? 'btn-outline flex-1 border-dashed !opacity-100 text-ink-2' : 'btn-primary flex-1'} disabled={out || needsChoice} onClick={add} aria-disabled={needsChoice || out}>{added ? <><CheckIcon className="h-5 w-5" />{t('product.added')}</> : needsChoice && !out ? t('product.chooseFirst', { name: groups[0]?.[0] ?? '' }) : t('product.addToCart')}</button>
       </div>
       {added && <Link href="/cart" className="btn-outline mt-3 w-full">{t('product.goToCart')}</Link>}
       {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-wa mt-3 w-full"><WhatsAppIcon className="h-5 w-5" />{t('product.orderWhatsApp')}</a>}

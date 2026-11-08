@@ -149,5 +149,8 @@
   "unavailable.down.body": "The store could not be reached. Please try again in a minute.",
   "error.generic": "Something went wrong. Please try again.",
   "error.notFound": "We could not find that page.",
-  "back": "Back"
+  "back": "Back",
+  "home.featuredEyebrow": "Fresh in",
+  "home.bestsellersEyebrow": "Most ordered",
+  "product.chooseFirst": "Choose {name} first"
 }

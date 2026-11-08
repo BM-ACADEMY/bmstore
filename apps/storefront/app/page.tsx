@@ -43,7 +43,7 @@ export default async function HomePage() {
 
       <section className="container-x pt-5 sm:pt-8">
         <div className="relative overflow-hidden rounded-card-lg bg-primary text-on-primary min-h-[440px] sm:min-h-[520px] flex items-end">
-          {banner && <Image src={banner} alt="" fill priority sizes="(min-width: 1152px) 1152px, 100vw" className="object-cover" />}
+          {banner && <Image src={banner} alt="" fill priority fetchPriority="high" sizes="(min-width: 1152px) 1152px, 100vw" className="object-cover" />}
           <div className={`absolute inset-0 ${banner ? 'bg-gradient-to-t from-ink/80 via-ink/20 to-transparent' : ''}`} aria-hidden />
           {!banner && (
             <svg className="absolute inset-0 h-full w-full opacity-[0.12]" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" aria-hidden>
@@ -63,9 +63,9 @@ export default async function HomePage() {
       {home.categories.length > 0 && (
         <section className="container-x mt-12">
           <SectionHeading eyebrow={t('nav.shop')} title={t('home.shopByCategory')} />
-          <div className="scroll-x snap-x">
+          <div className="flex gap-3 overflow-x-auto py-2 px-1.5 -mx-1.5 [scrollbar-width:none]">
             {home.categories.map((c) => (
-              <Link key={c.id} href={`/c/${c.slug}`} className="snap-start shrink-0 w-[108px] sm:w-[140px] text-center group">
+              <Link key={c.id} href={`/c/${c.slug}`} className="shrink-0 w-[108px] sm:w-[140px] text-center group">
                 <div className="relative mx-auto h-[108px] w-[108px] sm:h-[140px] sm:w-[140px] rounded-full overflow-hidden ring-2 ring-accent/70 ring-offset-4 ring-offset-bg bg-primary-soft">
                   {c.image ? <Image src={c.image} alt="" fill sizes="140px" className="object-cover transition group-hover:scale-105" /> : <span className="absolute inset-0 grid place-items-center font-heading text-4xl text-primary-text/60">{c.name[0]}</span>}
                 </div>
@@ -79,14 +79,14 @@ export default async function HomePage() {
 
       {home.featured.length > 0 && (
         <section className="container-x mt-14">
-          <SectionHeading eyebrow={t('home.featured')} title={t('home.featured')} href="/c/all?sort=newest" hrefLabel={t('home.viewAll')} />
-          <ProductGrid>{home.featured.map((p, i) => <ProductCard key={p.id} p={p} priority={i < 2} labels={labels} />)}</ProductGrid>
+          <SectionHeading eyebrow={t('home.featuredEyebrow')} title={t('home.featured')} href="/c/all?sort=newest" hrefLabel={t('home.viewAll')} />
+          <ProductGrid>{home.featured.map((p) => <ProductCard key={p.id} p={p} labels={labels} />)}</ProductGrid>
         </section>
       )}
 
       {home.bestsellers.length > 0 && (
         <section className="container-x mt-14">
-          <SectionHeading eyebrow={t('home.bestsellers')} title={t('home.bestsellers')} />
+          <SectionHeading eyebrow={t('home.bestsellersEyebrow')} title={t('home.bestsellers')} href="/c/all" hrefLabel={t('home.viewAll')} />
           <ProductGrid>{home.bestsellers.map((p) => <ProductCard key={p.id} p={p} labels={labels} />)}</ProductGrid>
         </section>
       )}

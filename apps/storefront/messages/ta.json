@@ -149,5 +149,8 @@
   "unavailable.down.body": "கடையை அணுக முடியவில்லை. ஒரு நிமிடத்தில் மீண்டும் முயற்சிக்கவும்.",
   "error.generic": "ஏதோ தவறு நடந்தது. மீண்டும் முயற்சிக்கவும்.",
   "error.notFound": "அந்தப் பக்கம் கிடைக்கவில்லை.",
-  "back": "பின்"
+  "back": "பின்",
+  "home.featuredEyebrow": "புதிதாக வந்தவை",
+  "home.bestsellersEyebrow": "அதிகம் ஆர்டர் செய்யப்பட்டவை",
+  "product.chooseFirst": "முதலில் {name} தேர்வு செய்க"
 }
