@@ -120,6 +120,7 @@ model Tenant {
   media               Media[]
   usage               TenantUsage?
   intake              StoreIntake?
+  domainMapping       StoreDomain?
 
   @@index([status, expiresAt])
   @@map("tenants")
@@ -466,4 +467,27 @@ model StoreIntake {
 
   @@index([completedAt, receivedAt])
   @@map("store_intakes")
+}
+
+// Phase 5: the client's own domain. tenants.custom_domain (what routing and Caddy's on-demand TLS gate use) is set
+// only once the CNAME to PLATFORM_BASE_DOMAIN is verified, so certificates are never requested for unverified names.
+model StoreDomain {
+  tenantId      String    @id @map("tenant_id") @db.Uuid
+  domain        String    @unique
+  /// pending | verified | failed
+  dnsStatus     String    @default("pending") @map("dns_status")
+  /// What DNS answered at the last check (CNAME targets or A records), for the developer to compare.
+  dnsSeen       String[]  @map("dns_seen")
+  dnsCheckedAt  DateTime? @map("dns_checked_at")
+  verifiedAt    DateTime? @map("verified_at")
+  /// unknown | valid | invalid | skipped
+  sslStatus     String    @default("unknown") @map("ssl_status")
+  sslDetail     String?   @map("ssl_detail")
+  sslExpiresAt  DateTime? @map("ssl_expires_at")
+  sslCheckedAt  DateTime? @map("ssl_checked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("store_domains")
 }
