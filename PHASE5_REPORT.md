@@ -10,7 +10,19 @@ The tenant-isolation gate is green: **414 tests**, now covering **21 models**.
 
 Scope respected: changes are in `apps/api`, the new `apps/console`, one **new file** in the admin
 (`apps/admin/app/api/auth/impersonate/route.ts`) and new docs/screenshots. `apps/storefront` (S3) was not touched.
-`package-lock.json` changed (new workspace + `bullmq`), so expect a lock-file merge with S3. Regenerate it with `npm install` after merging.
+
+**Merged with S3 (storefront + checkout).** Conflicts and how they were resolved:
+- `package-lock.json`: main's version, then regenerated with `npm install`.
+- Jobs: S3 added its own `JobsService` (unpaid-order expiry, weekly owner summary). Both stay: S3's file is
+  unchanged, mine is now `PlatformJobsService` (`src/jobs/platform-jobs.service.ts`), and one `JobsModule` hosts both.
+  The config field became `platformJobsEnabled` (env `JOBS_WORKER`), next to S3's `jobsEnabled` (`JOBS_ENABLED`).
+- `PLATFORM_BASE_DOMAIN` was added on both sides. One field remains, with your rule (default `store.bmtechx.in`). S3's
+  payment host now uses `rootDomain`, which gives the same hosts in dev and production.
+- The seed fix from both sides: kept the IST-midnight clamp (S3's minute offsets alone can still fail just after midnight).
+- My migrations were renumbered to `20261109…` so they apply after S3's `20261108120000_storefront_checkout`
+  (one had the same timestamp). They had not been deployed anywhere.
+- The gate now covers 23 models (S3's `payments`, `webhook_events` + my five).
+- `StorefrontModule` now also exports `InvoiceService` (used by QA).
 
 | # | Item | Commit |
 |---|------|--------|
@@ -100,7 +112,8 @@ check. A run passes when nothing failed. Runs are stored in `qa_runs`.
 
 | Check | Now |
 |---|---|
-| Test order placed, Invoice generated, Lighthouse mobile 85+ | `StorefrontProbe` interface. **"skipped: storefront not merged"** until S3 lands |
+| Test order placed, Invoice generated | **real**: a COD order (ONLINE if the store has COD off) through S3's `CheckoutService.place` in the store's tenant scope; the store's own WhatsApp number is the shopper; then S3's GST invoice PDF is rendered and checked; the order is then **cancelled and restocked** (a failed cleanup is its own failing row) |
+| Lighthouse mobile 85+ | **real when configured**: runs the Lighthouse CLI (mobile preset, performance only) against the store URL when `LIGHTHOUSE_BIN` (+ `CHROME_PATH`) is set; otherwise "skipped: Lighthouse not installed on this server" |
 | Owner alert delivered | real check through the `Notifier` (stub transport, see below) |
 | SSL valid | TLS probe; "SSL check skipped locally" in dev |
 | 4 policy pages present | real: each must exist with real content (≥ 200 characters) |
@@ -186,7 +199,8 @@ Screenshots (390 px, 2×, plus one desktop view): `docs/screenshots/s5/01-login.
 | Integration | Where | State now | To make it real |
 |---|---|---|---|
 | **WhatsApp / email notifications** (owner alerts, chasers, renewals, expiry, usage, developer alerts, weekly summary) | `src/notify/notifier.ts` | `StubNotifier`: in-memory outbox + masked log line; outbox rows say `stubbed` | Implement `Notifier` with WhatsApp Business API / SES; templates are referenced by id (`intake_chaser_1`, `renewal_day_305`, …) |
-| **Storefront QA checks** (test order, invoice, Lighthouse mobile) | `src/console/qa-probes.ts` | `UnmergedStorefrontProbe` → "skipped: storefront not merged" | After S3 merges: an `HttpStorefrontProbe` (checkout API on the store host, invoice fetch, Lighthouse CLI with the mobile preset) bound in `console.module.ts` |
+| **Lighthouse QA check** | `src/console/qa-probes.ts` | Skipped unless `LIGHTHOUSE_BIN` / `CHROME_PATH` are set (the API image has no Chrome) | Install `lighthouse` + Chromium where the API runs, or run QA from a box that has them |
+| **Owner/customer notifications** | `src/notify/notifier.ts` (console) and S3's `src/notifications` | Two stub notifier layers now exist (mine for developer/owner platform notices, S3's for order messages) | Wire one WhatsApp/email provider behind both, or fold `Notifier` into S3's senders |
 | **Razorpay refund API** (platform account) | `src/console/refund-gateway.ts` | Real code path, **test mode only**; with no `PLATFORM_RAZORPAY_KEY_*` it returns a marked fake `rfnd_stub_…` and the credit note says "test document" | Set test keys to exercise it; live refunds need `RAZORPAY_ALLOW_LIVE_REFUNDS=1` deliberately |
 | **Credit note PDF** | `RefundService.creditNoteHtml` | Printable HTML (browser "Save as PDF"); single GST line | Server-side PDF and CGST/SGST vs IGST split if your CA wants it |
 | **n8n** | `src/console/webhooks.ts` | Real HTTP delivery; recorded as `skipped` until `N8N_WEBHOOK_URL` is set | Point it at the n8n Webhook node; verify the signature with `WEBHOOK_SECRET` |
@@ -204,8 +218,11 @@ Screenshots (390 px, 2×, plus one desktop view): `docs/screenshots/s5/01-login.
 3. **Working days** = Monday to Friday in IST, minus `WORKING_DAY_HOLIDAYS`. Say if Saturdays count.
 4. **Late go-live + "change of mind"** is not eligible (the request is a change of mind after go-live); late go-live for
    any other reason is eligible. Approval needs an eligible verdict, so there is no manual override; a human can still reject.
-5. **Skipped QA checks do not block go-live,** so until the storefront merges, go-live happens without the order,
-   invoice and Lighthouse checks. If you want go-live blocked until S3 lands, it is one condition in `goLiveBlocker`.
+5. **Skipped QA checks do not block go-live.** Since S3 merged, the order and invoice checks are real; Lighthouse is
+   skipped unless the server has Chrome + the CLI. If you want go-live blocked on a skipped Lighthouse, it is one
+   condition in `goLiveBlocker`.
+   The QA test order leaves one cancelled order (named "QA test order", the store's own number) in the store's order
+   list and uses one order number.
 6. **Test-mode Razorpay keys fail QA** ("add the live keys before go-live").
 7. **Defaults:** stores created from an intake default to **STANDARD** (2,000 products), not STARTER. COD is **off**
    unless the client said yes.
@@ -215,7 +232,7 @@ Screenshots (390 px, 2×, plus one desktop view): `docs/screenshots/s5/01-login.
 10. **Store URLs** come from `STORE_URL_TEMPLATE` / `ADMIN_URL_TEMPLATE`. The defaults are `http://<host>:3002` /
     `:3001` in dev and `https://<host>` / `https://<host>/admin` in production. The production admin path is a guess,
     so please confirm how the admin is served per store.
-11. **Not changed (outside allowed paths):** `.github/workflows/ci.yml` does not build `apps/console` yet, add
-    `npm run build -w apps/console`. The README was left alone to avoid merge conflicts; this report holds the run notes.
+11. **CI** now typechecks and builds `apps/console` (`.github/workflows/ci.yml`, added after the S3 merge at your
+    request). The README was left alone to avoid merge conflicts; this report holds the run notes.
 12. **Shared dev role password:** the jest global setup resets the `bmstore_app` role's password (as before). If you run
     the API and the tests on the same Postgres, use the same password for both.
