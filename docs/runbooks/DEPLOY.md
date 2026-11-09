@@ -7,7 +7,7 @@ Run on the server as `deploy`, in `/opt/bmstore`. Steps, in order:
 |---|------|-------------------|------------|
 | 1 | Pull the requested ref (default `DEPLOY_BRANCH=main`) | `git fetch` + `merge --ff-only` (or detach on a tag/sha) | abort; nothing changed |
 | 2 | Build images tagged with the git sha | `compose build --pull api migrate tls-ask caddy backup` (+ web profile) | abort; nothing changed |
-| 2b | Data services up | `compose up -d --wait postgres redis (minio)` | abort |
+| 2b | Data services up | `compose up -d --wait postgres redis (rustfs)` | abort |
 | 3 | Pre-deploy DB dump → bucket `postgres/predeploy/` | `compose run backup predeploy` | abort before touching the schema (`--no-backup` skips) |
 | 4 | Migrations as the **owner** role | `compose run migrate` → `prisma migrate deploy` | abort; old release keeps running, alert sent |
 | 5 | `db:app-role` grants for `bmstore_app` | `psql -f infra/postgres/app-role.sql` (password via stdin) | abort |

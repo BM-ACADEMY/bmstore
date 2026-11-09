@@ -14,7 +14,7 @@ bad_services=""
 while IFS=$'\t' read -r name state health; do
   [[ -n "$name" ]] || continue
   svc="${name#bmstore-}"; svc="${svc%-[0-9]*}"
-  case "$svc" in migrate|backup|minio-init) continue ;; esac   # one-off jobs
+  case "$svc" in migrate|backup|rustfs-init) continue ;; esac   # one-off jobs
   restarts=$(docker inspect -f '{{.RestartCount}}' "$name" 2>/dev/null || echo 0)
   prev_f="$STATE_DIR/restarts.$svc"; prev=0; [[ -r "$prev_f" ]] && prev=$(<"$prev_f"); echo "$restarts" > "$prev_f"
   if [[ "$state" != running || "$health" == unhealthy ]]; then

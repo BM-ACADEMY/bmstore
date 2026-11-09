@@ -33,10 +33,10 @@ if command -v docker >/dev/null; then
   report="$report docker[$dk]"
 fi
 
-# Media usage: MinIO volume on this box, or bucket size via the backup toolbox (rclone)
+# Media usage: RustFS volume on this box, or bucket size via the backup toolbox (rclone)
 media_bytes=0
 if [[ "${MEDIA_BACKEND:-minio}" == minio ]]; then
-  media_bytes=$("$COMPOSE" exec -T minio du -sb /data 2>/dev/null | awk '{print $1}' || echo 0)
+  media_bytes=$("$COMPOSE" exec -T rustfs du -sk /data 2>/dev/null | awk '{print $1*1024}' || echo 0)
 else
   media_bytes=$("$COMPOSE" run --rm -T backup media-size 2>/dev/null | tail -1 || echo 0)
 fi

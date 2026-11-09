@@ -7,7 +7,7 @@ changed** (`apps/`, `package.json`, `docker-compose.yml`, `ci.yml` untouched).
 
 | Requirement | Where | Status |
 |---|---|---|
-| Production Compose: api, storefront, admin, console, Postgres 16, Redis, MinIO or S3/R2, Caddy | `deploy/docker-compose.prod.yml`, `deploy/docker/*.Dockerfile`, `deploy/compose.sh`, `deploy/.env.production.example` | built; frontends behind the `web` profile because `apps/storefront|admin|console` do not exist yet |
+| Production Compose: api, storefront, admin, console, Postgres 16, Redis, RustFS or S3/R2, Caddy | `deploy/docker-compose.prod.yml`, `deploy/docker/*.Dockerfile`, `deploy/compose.sh`, `deploy/.env.production.example` | built; frontends behind the `web` profile because `apps/storefront|admin|console` do not exist yet |
 | App DB role = non-owner `bmstore_app`, migrations as owner | `infra/postgres/app-role.sql`, `initdb/01-app-role.sh`, `migrate` service (owner URL), `api` service (app URL) | built and **tested against Postgres 16** |
 | Caddy: on-demand TLS gated by an "ask" endpoint, HTTP→HTTPS, security headers, rate limits | `infra/caddy/Caddyfile` (+ `Caddyfile.wildcard`), `infra/tls-ask/`, `deploy/docker/caddy.Dockerfile` | built; tls-ask **unit-tested** (14 cases); Caddyfile syntax not machine-validated (see §2) |
 | Deploy script: pull, build, migrate:deploy, db:app-role, health check, rollback | `deploy/deploy.sh` | built; **dry-run tested**; real run needs Docker |
@@ -48,16 +48,16 @@ changed** (`apps/`, `package.json`, `docker-compose.yml`, `ci.yml` untouched).
    (admin endpoint; if disabled, replace with `caddy version`).
 5. **Redis `rename-command`** lines in `infra/redis/redis.conf` with the `redis:7-alpine` image (deprecated but supported);
    the health check uses `redis-cli ping` which is unaffected.
-6. **MinIO** image tags pinned to 2025 releases and `mc anonymous set download` for public read of the media bucket;
-   adjust if your MinIO/mc versions differ. MinIO console at `minio.<root>` is exposed through Caddy — restrict by IP or
-   remove that site if you do not need it.
+6. **RustFS** (`rustfs/rustfs:1.0.4`, replaced MinIO — its images were withdrawn) and the `rustfs-init` job
+   (`amazon/aws-cli` creating the bucket + anonymous `s3:GetObject` policy). Not run against a live RustFS yet; see
+   docs/runbooks/RUSTFS.md for the checks. The RustFS console is no longer routed by Caddy (localhost-only, SSH tunnel).
 7. **Backups to a real bucket** (rclone S3 provider settings for R2/DO Spaces/Hetzner; `--s3-no-check-bucket`), the
    weekly media sync, retention deletes, the `LATEST` markers, and `age` encryption/decryption.
 8. **`server-setup.sh`** end to end on Ubuntu 22.04/24.04 (sshd drop-in precedence, ufw, fail2ban `backend=systemd`,
    unattended-upgrades reboot), and that your provider image does not override `authorized_keys` on reboot (cloud-init).
 9. **GitHub Actions** run: secrets, `ssh-keyscan` known_hosts format with a non-22 port, the forced-command key path.
 10. **Monitoring against the live stack**: `docker ps` label filtering (`com.docker.compose.project=bmstore`),
-    `compose exec -T postgres psql` without a password (unix socket trust inside the official image), `compose exec minio du`,
+    `compose exec -T postgres psql` without a password (unix socket trust inside the official image), `compose exec rustfs du`,
     Redis `--scan` with `-a`. WhatsApp Cloud API delivery (template approval) and webhook formats.
 11. **Deploy rollback for real** (image retag/`--no-build` with a previous tag that still exists locally; images are
     pruned only when older than 7 days and untagged, so the previous tag survives).
@@ -66,8 +66,8 @@ changed** (`apps/`, `package.json`, `docker-compose.yml`, `ci.yml` untouched).
 
 ## 4. Assumptions and decisions to confirm
 - **ROOT_DOMAIN** is `store.bmtechx.in`; the Phase 1 README mentions `bmstore.in` — the env file is the single place to change it.
-- **Platform hosts**: `api.`, `admin.` (store-owner app), `console.` (superadmin app), `media.`/`minio.` (bundled MinIO),
-  root + `www.` redirect to `console.`. `console`, `media`, `minio` are **not** in the API's `reservedSubdomains`
+- **Platform hosts**: `api.`, `admin.` (store-owner app), `console.` (superadmin app), `media.` (bundled RustFS),
+  root + `www.` redirect to `console.`. `console`, `media` are **not** in the API's `reservedSubdomains`
   (`apps/api/src/config/app-config.ts`), so tls-ask denies them itself and Caddy proxies `console.<root>/api/*` with
   `Host: api.<root>` so superadmin calls work. Adding them to `reservedSubdomains` in Phase 2 would be cleaner.
 - **Tenant API path**: `https://<tenant-host>/api/*` → API with the tenant Host (prefix stripped). The API's own CORS is

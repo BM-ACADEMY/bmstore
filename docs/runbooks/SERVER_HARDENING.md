@@ -43,8 +43,8 @@ sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo
 sudo ufw enable
 ```
 Docker publishes ports with its own iptables rules that bypass ufw. That is fine here because the only published ports
-are Caddy's 80/443 — Postgres, Redis, MinIO and the API are reachable only on the internal Docker networks. Never add
-`ports:` to those services; use `./deploy/compose.sh exec` or an SSH tunnel instead.
+are Caddy's 80/443 — Postgres, Redis, RustFS (S3 API) and the API are reachable only on the internal Docker networks. The one exception is the RustFS admin console, published on `127.0.0.1:9001` only (not reachable from outside). Never add
+`ports:` to the other services; use `./deploy/compose.sh exec` or an SSH tunnel instead.
 Also enable the **provider** firewall (Hetzner Cloud Firewall / DigitalOcean Cloud Firewall) with the same three ports —
 it filters before packets reach the VM.
 

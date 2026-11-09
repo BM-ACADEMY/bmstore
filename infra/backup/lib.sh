@@ -46,11 +46,11 @@ setup_remote() {
 }
 remote_path() { printf 'bk:%s/%s' "$BACKUP_S3_BUCKET" "$1"; }
 
-# Media bucket (MinIO or external S3) as a second rclone remote, for the weekly media copy.
+# Media bucket (bundled RustFS or external S3) as a second rclone remote, for the weekly media copy.
 setup_media_remote() {
   [[ -n "${S3_ACCESS_KEY:-}" && -n "${S3_SECRET_KEY:-}" && -n "${S3_BUCKET:-}" ]] || return 1
   export RCLONE_CONFIG_MEDIA_TYPE=s3
-  local prov=Other; [[ "${MEDIA_BACKEND:-minio}" == minio ]] && prov=Minio
+  local prov=Other   # RustFS / R2 / S3-compatible: generic S3 provider
   export RCLONE_CONFIG_MEDIA_PROVIDER="$prov"
   export RCLONE_CONFIG_MEDIA_ACCESS_KEY_ID="$S3_ACCESS_KEY"
   export RCLONE_CONFIG_MEDIA_SECRET_ACCESS_KEY="$S3_SECRET_KEY"

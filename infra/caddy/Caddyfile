@@ -6,8 +6,8 @@
 #   api.<ROOT_DOMAIN>       -> api            (platform host: superadmin + platform routes)
 #   admin.<ROOT_DOMAIN>     -> admin app      (store-owner dashboard)
 #   console.<ROOT_DOMAIN>   -> console app    (platform superadmin console)
-#   media.<ROOT_DOMAIN>     -> MinIO S3 API   (read-only from the internet)
-#   minio.<ROOT_DOMAIN>     -> MinIO console
+#   media.<ROOT_DOMAIN>     -> RustFS S3 API  (GET/HEAD of objects in the media bucket only; the RustFS
+#                              admin console is NOT exposed: localhost-only, use an SSH tunnel)
 #   <ROOT_DOMAIN>, www.     -> redirect to console
 #   everything else         -> tenant store (on-demand TLS, approved by tls-ask only for real tenants)
 #                              /api/*  -> api (prefix stripped, Host kept => tenant context)
@@ -132,22 +132,35 @@ console.{$ROOT_DOMAIN} {
 	redir https://console.{$ROOT_DOMAIN}{uri} permanent
 }
 
-# MinIO (compose profile "minio"). With external S3/R2 these simply answer 502 and can be removed.
+# RustFS (compose profile "minio"). With external S3/R2 this simply answers 502 and can be removed.
+# Public, read-only: only GET/HEAD of objects under /<S3_BUCKET>/ are forwarded; everything else
+# (bucket listing, other buckets, RustFS admin API, any write) never reaches RustFS.
+# The bucket policy (rustfs-init) additionally allows anonymous s3:GetObject only.
 media.{$ROOT_DOMAIN} {
 	import access_log
 	import security_headers
 	import limits
-	@write not method GET HEAD OPTIONS
-	respond @write 405
-	header Cache-Control "public, max-age=31536000, immutable"
-	reverse_proxy minio:9000
-}
-
-minio.{$ROOT_DOMAIN} {
-	import access_log
-	import security_headers
-	import limits
-	reverse_proxy minio:9001
+	@read {
+		method GET HEAD
+		path /{$S3_BUCKET}/*
+	}
+	handle @read {
+		header Cache-Control "public, max-age=31536000, immutable"
+		header Access-Control-Allow-Origin "*"
+		reverse_proxy rustfs:9000 {
+			# never forward credentials from the internet; anonymous access only
+			header_up -Authorization
+		}
+	}
+	@preflight method OPTIONS
+	handle @preflight {
+		header Access-Control-Allow-Origin "*"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		respond 204
+	}
+	handle {
+		respond 404
+	}
 }
 
 # -----------------------------------------------------------------------------
