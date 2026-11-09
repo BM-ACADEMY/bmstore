@@ -3,7 +3,7 @@ import { Filters } from '@/components/filters';
 import { SearchIcon } from '@/components/icons';
 import { Pagination } from '@/components/pagination';
 import { Products } from '@/components/product-grid';
-import { getT } from '@/lib/server/store';
+import { getBootstrap, getT } from '@/lib/server/store';
 import { fetchListing, listingQuery, Search } from '@/lib/server/listing';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,7 +14,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SearchPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const q = typeof sp.q === 'string' ? sp.q.trim() : '';
-  const { t } = await getT();
+  const [{ t }, boot] = await Promise.all([getT(), getBootstrap()]);
+  const placeholder = boot.layout === 'v2-grocer' ? t('search.placeholderGrocer') : boot.layout === 'v3-retail' ? t('search.placeholderRetail') : t('search.placeholder');
   const listing = q ? await fetchListing(sp) : null;
   const href = (page: number) => { const p = listingQuery(sp); p.set('page', String(page)); return `/search?${p}`; };
   return (
@@ -23,7 +24,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       <form action="/search" method="get" role="search" className="mt-4 flex gap-2">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
-          <input name="q" defaultValue={q} className="field pl-12" placeholder={t('search.placeholder')} autoFocus={!q} enterKeyHint="search" aria-label={t('search.title')} />
+          <input name="q" defaultValue={q} className="field pl-12" placeholder={placeholder} autoFocus={!q} enterKeyHint="search" aria-label={t('search.title')} />
         </div>
         <button type="submit" className="btn-primary">{t('nav.search')}</button>
       </form>

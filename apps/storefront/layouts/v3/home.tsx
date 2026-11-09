@@ -27,7 +27,7 @@ export function HomeV3(props: HomeProps) {
               <rect width="400" height="400" fill="url(#hero-lines)" />
             </svg>
           )}
-          <div className="relative container-x pb-9 sm:pb-14 pt-24">
+          <div className="relative container-x pb-9 sm:pb-14 pt-24 min-w-0">
             <div className="h-px w-14 bg-accent mb-5" aria-hidden />
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-90">{boot.store.name}</p>
             <h1 className="font-heading mt-2 text-[2.6rem] sm:text-6xl leading-[1.02] max-w-2xl">{tagline ?? boot.store.name}</h1>

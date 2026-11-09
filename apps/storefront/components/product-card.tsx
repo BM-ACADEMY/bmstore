@@ -69,7 +69,7 @@ function FramedCard({ p, priority }: { p: CardProduct; priority: boolean }) {
       <div className="p-3.5">
         <div className="text-[15px] leading-snug text-ink line-clamp-2 min-h-[2.6em] font-medium">{p.name}</div>
         <div className="mt-2 flex items-baseline justify-between gap-2">
-          <span className="font-heading text-[19px] leading-none text-ink">{rupees(p.price)}</span>
+          <span className="text-[17px] font-semibold leading-none text-ink">{rupees(p.price)}</span>
           {p.mrp > p.price && <span className="text-xs price-strike">{rupees(p.mrp)}</span>}
         </div>
         {optionCount > 1 && <div className="mt-1.5 text-xs text-ink-3">{t('product.options', { count: optionCount })}</div>}

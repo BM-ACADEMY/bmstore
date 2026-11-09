@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Bootstrap } from '@/lib/server/store';
+import { layoutOf } from '@/lib/theme';
 import { whatsappLink } from '@/lib/wa';
 import { PhoneIcon, PinIcon, ShieldIcon, WhatsAppIcon } from './icons';
 
@@ -9,7 +10,7 @@ export function Footer({ boot, t }: { boot: Bootstrap; t: (k: string, v?: Record
   const other = boot.pages.filter((p) => !p.isPolicy);
   return (
     <footer className="mt-16 border-t border-line bg-surface">
-      <div className="zari" aria-hidden />
+      {layoutOf(boot.theme) === 'v1-textile' ? <div className="zari" aria-hidden /> : <div className="h-1 bg-primary" aria-hidden />}
       <div className="container-x py-10 grid gap-8 sm:grid-cols-3">
         <div>
           <div className="font-heading text-xl font-semibold text-primary-text">{boot.store.name}</div>

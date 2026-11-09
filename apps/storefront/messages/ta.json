@@ -179,5 +179,6 @@
   "switcher.fonts": "எழுத்துருக்கள்",
   "switcher.reset": "கடையின் சொந்த தோற்றத்திற்கு",
   "switcher.button": "தீம்",
-  "search.placeholderGrocer": "அரிசி, பருப்பு, எண்ணெய், மசாலா தேடுங்கள்…"
+  "search.placeholderGrocer": "அரிசி, பருப்பு, எண்ணெய், மசாலா தேடுங்கள்…",
+  "search.placeholderRetail": "நெக்லஸ், காதணி, வளையல் தேடுங்கள்…"
 }

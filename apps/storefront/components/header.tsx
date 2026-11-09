@@ -59,14 +59,14 @@ export function Header({ categories, pages }: { categories: Cat[]; pages: Array<
         <form action="/search" method="get" role="search" className="container-x pb-2.5 lg:hidden">
           <div className="relative">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" />
-            <input name="q" className="field h-11 min-h-11 pl-11 bg-surface rounded-pill text-[15px]" placeholder={t('search.placeholder')} enterKeyHint="search" aria-label={t('nav.search')} />
+            <input name="q" className="field h-11 min-h-11 pl-11 bg-surface rounded-pill text-[15px]" placeholder={t('search.placeholderGrocer')} enterKeyHint="search" aria-label={t('nav.search')} />
           </div>
         </form>
       )}
       {grocer && (
         <form action="/search" method="get" role="search" className="hidden lg:block border-t border-line/70">
           <div className="container-x py-2 flex items-center gap-3">
-            <div className="relative flex-1 max-w-xl"><SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" /><input name="q" className="field h-11 min-h-11 pl-11 rounded-pill" placeholder={t('search.placeholder')} aria-label={t('nav.search')} /></div>
+            <div className="relative flex-1 max-w-xl"><SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-ink-3" /><input name="q" className="field h-11 min-h-11 pl-11 rounded-pill" placeholder={t('search.placeholderGrocer')} aria-label={t('nav.search')} /></div>
           </div>
         </form>
       )}

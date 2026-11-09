@@ -179,5 +179,6 @@
   "switcher.fonts": "Fonts",
   "switcher.reset": "Back to the store's own look",
   "switcher.button": "Theme",
-  "search.placeholderGrocer": "Search rice, dal, oil, spices…"
+  "search.placeholderGrocer": "Search rice, dal, oil, spices…",
+  "search.placeholderRetail": "Search necklaces, earrings, bangles…"
 }

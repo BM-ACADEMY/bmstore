@@ -22,7 +22,8 @@ export function BuyBox({ p, url }: { p: BuyProduct; url: string }) {
   const groups = useMemo(() => { const g = new Map<string, BuyProduct['variants']>(); for (const v of p.variants) g.set(v.optionName, [...(g.get(v.optionName) ?? []), v]); return [...g.entries()]; }, [p.variants]);
   const hasVariants = p.variants.length > 0;
   const firstAvailable = p.variants.find((v) => v.stock > 0) ?? null;
-  const [variantId, setVariantId] = useState<string | null>(p.variants.length === 1 ? p.variants[0].id : firstAvailable && groups.length === 1 && p.variants.length <= 2 ? firstAvailable.id : null);
+  // textile stores make the shopper pick a colour; a grocer preselects the base pack (one tap to add)
+  const [variantId, setVariantId] = useState<string | null>(p.variants.length === 1 ? p.variants[0].id : firstAvailable && groups.length === 1 && (p.variants.length <= 2 || layout === 'v2-grocer') ? firstAvailable.id : null);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const variant = p.variants.find((v) => v.id === variantId) ?? null;

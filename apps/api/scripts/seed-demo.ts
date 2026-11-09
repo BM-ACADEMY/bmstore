@@ -1,7 +1,10 @@
 /**
- * Demo store for development and screenshots:
- *   npm run seed:demo                       # slug "demo" -> http://demo.localhost:3001, owner@demo.test / demo-password-123
- *   DEMO_SLUG=acme DEMO_PASSWORD=... npm run seed:demo
+ * Demo stores for development and screenshots:
+ *   npm run seed:demo                       # slug "demo", silks preset -> http://demo.localhost:3001, owner@demo.test / demo-password-123
+ *   DEMO_SLUG=acme DEMO_PRESET=foods npm run seed:demo
+ *   npm run seed:demos                      # the three Phase 4 demo tenants: silks (V1), foods (V2), jewels (V3)
+ *
+ * The three presets (scripts/seed-presets.ts) share every line of code: only the catalogue CSV and the theme_configs row differ.
  *
  * Creates (or recreates) the tenant, its owner, 4 categories with 25 products from seed/demo-products.csv, generated
  * placeholder images pushed through the real media pipeline (presign -> storage -> complete -> WebP worker), a few
@@ -14,7 +17,6 @@ import { INestApplicationContext } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import sharp from 'sharp';
 import { AppModule } from '../src/app.module';
 import { AuthService } from '../src/auth/auth.service';
 import { PagesService } from '../src/content/pages';
@@ -24,54 +26,12 @@ import { MediaService } from '../src/media/media.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { ObjectStorageService } from '../src/storage/object-storage.service';
 import { TenantResolver } from '../src/tenancy/tenant-resolver.service';
+import { PresetId, PRESETS } from './seed-presets';
 
-export interface SeedOptions { slug: string; name?: string; ownerEmail?: string; password?: string; withImages?: boolean; withOrders?: boolean; quiet?: boolean }
+export { silkPlaceholder as placeholderImage, silkBanner as bannerImage } from './seed-presets';
+
+export interface SeedOptions { slug: string; preset?: PresetId; name?: string; ownerEmail?: string; password?: string; withImages?: boolean; withOrders?: boolean; quiet?: boolean }
 export interface SeedResult { tenantId: string; products: number; images: number; orders: number; customers: number; warnings: string[] }
-
-const CATEGORY_COLOURS: Record<string, [string, string]> = { Sarees: ['#7a1f2b', '#c9973b'], Kurtas: ['#1f4e5f', '#e8b920'], Jewellery: ['#6b3a12', '#f0c060'], 'Home Decor': ['#3f5a2a', '#d9a441'] };
-const NAME_COLOURS: Record<string, string> = { maroon: '#7a1f2b', 'peacock blue': '#0e6e8c', mustard: '#d4a017', 'bottle green': '#0f4c35', 'rose pink': '#d4647a', beige: '#d8c3a5', white: '#f4efe6', indigo: '#2b3a8c', teal: '#0f766e', cream: '#f3e9d2', yellow: '#e8b920', 'antique gold': '#b8862b', ikat: '#2f4f6f' };
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
-/**
- * A 1200x1500 placeholder that reads as a textile: body colour from the product name (or the category), a woven
- * stripe texture, a zari-style border with temple motifs and a contrasting pallu block. Real enough to judge layouts.
- */
-export async function placeholderImage(name: string, category: string, i: number): Promise<Buffer> {
-  const [catBg, zari] = CATEGORY_COLOURS[category] ?? ['#374151', '#c9973b'];
-  const key = Object.keys(NAME_COLOURS).find((k) => name.toLowerCase().includes(k));
-  const bg = key ? NAME_COLOURS[key] : catBg;
-  const light = ['#f4efe6', '#f3e9d2', '#d8c3a5', '#e8b920', '#d4a017'].includes(bg);
-  const ink = light ? '#2b1b17' : '#ffffff';
-  const stripes = Array.from({ length: 30 }, (_, n) => `<rect x="0" y="${n * 50 + (i % 3) * 7}" width="1200" height="2" fill="${ink}" fill-opacity="0.07"/>`).join('');
-  const motifs = Array.from({ length: 12 }, (_, n) => `<path d="M${50 + n * 100} 1335l28 28-28 28-28-28z" fill="${zari}"/>`).join('');
-  const label = name.length > 30 ? name.slice(0, 29) + '…' : name;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500">
-    <rect width="1200" height="1500" fill="${bg}"/>${stripes}
-    <rect x="860" y="0" width="340" height="1500" fill="${zari}" fill-opacity="0.18"/>
-    <rect x="860" y="0" width="6" height="1500" fill="${zari}"/>
-    <rect x="0" y="1290" width="1200" height="14" fill="${zari}"/>
-    <rect x="0" y="1405" width="1200" height="14" fill="${zari}"/>${motifs}
-    <rect x="0" y="1440" width="1200" height="60" fill="${zari}" fill-opacity="0.5"/>
-    <text x="80" y="200" font-family="serif" font-size="60" fill="${ink}" fill-opacity="0.85">${esc(label)}</text>
-    <text x="80" y="260" font-family="sans-serif" font-size="34" fill="${ink}" fill-opacity="0.6">${esc(category)}</text>
-  </svg>`;
-  return sharp(Buffer.from(svg)).jpeg({ quality: 86 }).toBuffer();
-}
-
-/** 1800x1000 hero banner in the store colours with the zari motif. */
-export async function bannerImage(): Promise<Buffer> {
-  const motifs = Array.from({ length: 18 }, (_, n) => `<path d="M${50 + n * 100} 930l22 22-22 22-22-22z" fill="#c9973b"/>`).join('');
-  const weave = Array.from({ length: 20 }, (_, n) => `<rect x="0" y="${n * 50}" width="1800" height="2" fill="#ffffff" fill-opacity="0.05"/>`).join('');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1000">
-    <rect width="1800" height="1000" fill="#7a1f2b"/>${weave}
-    <rect x="1180" y="0" width="620" height="1000" fill="#c9973b" fill-opacity="0.22"/>
-    <rect x="1180" y="0" width="8" height="1000" fill="#c9973b"/>
-    <rect x="0" y="900" width="1800" height="10" fill="#c9973b"/>${motifs}
-    <rect x="0" y="990" width="1800" height="10" fill="#c9973b"/>
-    <circle cx="1490" cy="420" r="260" fill="#c9973b" fill-opacity="0.25"/>
-  </svg>`;
-  return sharp(Buffer.from(svg)).jpeg({ quality: 86 }).toBuffer();
-}
 
 export async function seedDemo(app: INestApplicationContext, opts: SeedOptions): Promise<SeedResult> {
   const prisma = app.get(PrismaService);
@@ -83,7 +43,8 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
   const pages = app.get(PagesService);
   const log = (m: string) => { if (!opts.quiet) console.log(m); };
   const warnings: string[] = [];
-  const name = opts.name ?? 'Sri Lakshmi Silks';
+  const preset = PRESETS[opts.preset ?? 'silks'];
+  const name = opts.name ?? preset.name;
   const ownerEmail = (opts.ownerEmail ?? `owner@${opts.slug}.test`).toLowerCase();
   const password = opts.password ?? 'demo-password-123';
   const withImages = (opts.withImages ?? true) && storage.configured;
@@ -100,24 +61,18 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
     log(`removed previous "${opts.slug}" store`);
   }
   const tenant = await prisma.base.tenant.create({
-    data: { name, slug: opts.slug, subdomain: opts.slug, plan: 'STANDARD', status: 'LIVE', address: '12, Nethaji Road, Kanchipuram 631501', gstNumber: '33ABCDE1234F1Z5', supportPhone: '9876543210', whatsappNumber: '919876543210' },
+    data: { name, slug: opts.slug, subdomain: opts.slug, plan: 'STANDARD', status: 'LIVE', ...preset.tenant },
   });
   // the Host -> tenant cache may still point at the previous store with this slug (5 min TTL): drop it
   await app.get(TenantResolver).invalidate({ subdomain: opts.slug }, old ?? {});
   const passwordHash = await auth.hashPassword(password);
   await prisma.base.user.create({ data: { tenantId: tenant.id, email: ownerEmail, passwordHash, role: 'store_owner' } });
   await prisma.base.user.create({ data: { tenantId: tenant.id, email: `staff@${opts.slug}.test`, passwordHash, role: 'staff' } });
-  await prisma.base.settings.create({ data: { tenantId: tenant.id, shippingMode: 'FREE_ABOVE', flatRate: 7900, freeAbove: 199900, codEnabled: true, codCharge: 4900, orderPrefix: 'SLS', cityRates: [{ city: 'Chennai', ratePaise: 4900 }, { city: 'Kanchipuram', ratePaise: 0 }] } });
-  await prisma.base.themeConfig.create({ data: {
-    tenantId: tenant.id, layoutVariant: 'v1-textile', paletteId: 'v1-textile', primaryColor: '#7A1F2B', secondaryColor: '#C9973B', fontPairId: 'playfair-inter', headerStyle: 'centered-logo', cardStyle: 'portrait',
-    homepageSections: [
-      { type: 'offer_strip', text: 'New Kanchipuram silks for the wedding season', textTa: 'திருமண சீசனுக்கு புதிய காஞ்சிபுரம் பட்டுப் புடவைகள்' },
-      { type: 'hero', tagline: 'Handwoven silks from Kanchipuram', taglineTa: 'காஞ்சிபுரத்தின் கைத்தறி பட்டு' },
-    ],
-  } });
+  await prisma.base.settings.create({ data: { ...preset.settings, tenantId: tenant.id } });
+  await prisma.base.themeConfig.create({ data: { ...preset.theme, tenantId: tenant.id, homepageSections: preset.theme.homepageSections as any, options: preset.theme.options as any } });
   log(`store "${name}" (${opts.slug}) created, owner ${ownerEmail}`);
 
-  const csv = readFileSync(join(__dirname, '..', 'seed', 'demo-products.csv'));
+  const csv = readFileSync(join(__dirname, '..', 'seed', preset.csv));
   const rows = csv.toString('utf8').split(/\r?\n/).slice(1).filter(Boolean).map((l) => l.split(','));
 
   return prisma.runAsTenant(tenant.id, async () => {
@@ -125,7 +80,7 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
     // 2. placeholder images through the real pipeline
     let images = 0;
     if (withImages) {
-      const files = await Promise.all(rows.map(async (r, i) => ({ filename: r[8], contentType: 'image/jpeg', size: 0, kind: 'product' as const, bytes: await placeholderImage(r[0], r[6], i) })));
+      const files = await Promise.all(rows.map(async (r, i) => ({ filename: r[8], contentType: 'image/jpeg', size: 0, kind: 'product' as const, bytes: await preset.placeholder(r[0], r[6], i) })));
       const pre = await media.presign({ files: files.map((f) => ({ filename: f.filename, contentType: f.contentType, size: f.bytes.length, kind: f.kind })) });
       const byId = new Map(pre.files.map((p, i) => [p.id, files[i]]));
       for (const p of pre.files) {
@@ -135,14 +90,15 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
       const done = await media.complete({ ids: pre.files.map((p) => p.id) });
       const bad = done.results.filter((r) => r.status !== 'UPLOADED');
       if (bad.length) warnings.push(`${bad.length} image(s) could not be confirmed`);
-      // hero banner through the same pipeline
-      const banner = await bannerImage();
-      const bpre = await media.presign({ files: [{ filename: 'hero-banner.jpg', contentType: 'image/jpeg', size: banner.length, kind: 'banner' }] });
-      await storage.put((await db.media.findUniqueOrThrow({ where: { id: bpre.files[0].id } })).originalKey, banner, 'image/jpeg');
-      await media.complete({ ids: [bpre.files[0].id] });
-      await worker.runOnce(30);
-      const bannerRow = await db.media.findUnique({ where: { id: bpre.files[0].id } });
-      if (bannerRow?.key) await db.themeConfig.update({ where: { tenantId: tenant.id }, data: { bannerUrls: [storage.publicUrl(bannerRow.key)] } });
+      // hero banners through the same pipeline (the slider presets have two)
+      const bannerBytes = await Promise.all(preset.banners.map((b) => b()));
+      const bpre = await media.presign({ files: bannerBytes.map((b, n) => ({ filename: `hero-banner-${n + 1}.jpg`, contentType: 'image/jpeg', size: b.length, kind: 'banner' as const })) });
+      for (let n = 0; n < bpre.files.length; n++) await storage.put((await db.media.findUniqueOrThrow({ where: { id: bpre.files[n].id } })).originalKey, bannerBytes[n], 'image/jpeg');
+      await media.complete({ ids: bpre.files.map((f) => f.id) });
+      await worker.runOnce(40);
+      const bannerRows = await db.media.findMany({ where: { id: { in: bpre.files.map((f) => f.id) }, status: 'READY' }, orderBy: { filename: 'asc' } });
+      const bannerKeys = bannerRows.map((r) => r.key).filter((k): k is string => Boolean(k));
+      if (bannerKeys.length) await db.themeConfig.update({ where: { tenantId: tenant.id }, data: { bannerUrls: bannerKeys.map((k) => storage.publicUrl(k)) } });
       images = await db.media.count({ where: { status: 'READY', kind: 'product' } });
       const failed = await db.media.findMany({ where: { status: 'FAILED' } });
       for (const f of failed) warnings.push(`image ${f.filename}: ${f.error}`);
@@ -150,33 +106,24 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
     }
 
     // 3. products from the CSV (categories are created by the import)
-    const report = await imports.run(csv, { filename: 'demo-products.csv', status: 'ACTIVE' });
+    const report = await imports.run(csv, { filename: preset.csv, status: 'ACTIVE' });
     if (report.failed) warnings.push(`${report.failed} demo rows failed: ${report.errors.map((e) => `row ${e.row}: ${e.reason}`).join('; ')}`);
     log(`${report.imported} products imported into ${await db.category.count()} categories`);
-    // category circles use their first product photo; variants: colours on the silk sarees, sizes on kurtas
+    // category tiles use their first product photo and carry the preset's Tamil label; variants per the preset plan
     for (const c of await db.category.findMany()) {
       const first = await db.product.findFirst({ where: { categoryId: c.id, images: { isEmpty: false } }, orderBy: { name: 'asc' } });
-      if (first) await db.category.update({ where: { id: c.id }, data: { image: first.images[0] } });
+      await db.category.update({ where: { id: c.id }, data: { ...(first ? { image: first.images[0] } : {}), nameTa: preset.categoriesTa[c.name] ?? null } });
     }
-    const variantPlan: Array<[RegExp, string, Array<[string, number, number]>]> = [
-      [/^Kanchipuram Silk Saree/, 'Colour', [['Maroon', 0, 3], ['Peacock Blue', 25000, 2], ['Bottle Green', 0, 0], ['Mustard', -20000, 4]]],
-      [/^Soft Silk Saree/, 'Colour', [['Rose Pink', 0, 5], ['Lavender', 0, 2], ['Sea Green', 0, 1]]],
-      [/Kurta|Pyjama/, 'Size', [['S', 0, 4], ['M', 0, 6], ['L', 0, 5], ['XL', 10000, 2], ['XXL', 15000, 0]]],
-      [/Veshti|Dhoti/, 'Length', [['4 muzham', 0, 5], ['8 muzham', 30000, 3]]],
-    ];
     for (const p of await db.product.findMany()) {
-      const plan = variantPlan.find(([re]) => re.test(p.name));
+      const plan = preset.variants.find((v) => v.match.test(p.name));
       if (!plan) continue;
-      await db.variant.createMany({ data: plan[2].map(([optionValue, priceDelta, stock]) => ({ tenantId: tenant.id, productId: p.id, optionName: plan[1], optionValue, priceDelta, stock })) });
+      await db.variant.createMany({ data: plan.values.map(([optionValue, delta, stock]) => ({ tenantId: tenant.id, productId: p.id, optionName: plan.optionName, optionValue, priceDelta: plan.deltaMode === 'factor' ? Math.round(p.price * delta) : delta, stock })) });
     }
 
     // 4. coupons, policy pages
-    await db.coupon.createMany({ data: [
-      { tenantId: tenant.id, code: 'WELCOME10', type: 'PERCENT', value: 10, minOrder: 99900 },
-      { tenantId: tenant.id, code: 'FLAT200', type: 'FLAT', value: 20000, minOrder: 149900, usageLimit: 100, expiresAt: new Date(Date.now() + 60 * 86_400_000) },
-    ] });
+    await db.coupon.createMany({ data: preset.coupons.map((c) => ({ ...c, tenantId: tenant.id })) });
     await pages.ensurePolicyPages();
-    await db.page.create({ data: { tenantId: tenant.id, slug: 'about-us', title: 'About us', content: '<p>Family-run silk and handloom store from Kanchipuram since 1987.</p>' } });
+    await db.page.create({ data: { tenantId: tenant.id, ...preset.about } });
 
     // 5. customers and orders
     let orders = 0;
@@ -200,10 +147,10 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
         const picks = [products[(i * 3) % products.length], products[(i * 7 + 1) % products.length]].slice(0, 1 + (i % 2));
         const items = picks.map((p, j) => ({ productId: p.id, variantId: null, name: p.name, sku: p.sku, qty: 1 + (j % 2), unitPrice: p.price, total: p.price * (1 + (j % 2)), image: p.images[0] ?? null }));
         const subtotal = items.reduce((n, it) => n + it.total, 0);
-        const shipping = subtotal >= 199900 ? 0 : 7900;
+        const shipping = subtotal >= (preset.settings.freeAbove ?? 0) ? 0 : preset.settings.flatRate ?? 0;
         const addr = (c.addresses as any[])[0];
         await db.order.create({ data: {
-          tenantId: tenant.id, orderNo: `SLS-${1041 + i}`, customerId: c.id, items, subtotal, shipping, tax: 0, total: subtotal + shipping + (paymentMode === 'COD' ? 4900 : 0),
+          tenantId: tenant.id, orderNo: `${preset.orderPrefix}-${1041 + i}`, customerId: c.id, items, subtotal, shipping, tax: 0, total: subtotal + shipping + (paymentMode === 'COD' ? preset.settings.codCharge ?? 0 : 0),
           paymentMode: paymentMode as any, paymentStatus: paymentStatus as any, orderStatus: orderStatus as any, address: addr,
           createdAt: new Date(Date.now() - daysAgo * 86_400_000 - (i % 5) * 600_000), // minutes, so "today" orders stay today around midnight IST
         } });
@@ -220,7 +167,9 @@ if (require.main === module) {
     const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
     try {
       const slug = process.env.DEMO_SLUG ?? 'demo';
-      const r = await seedDemo(app, { slug, password: process.env.DEMO_PASSWORD, ownerEmail: process.env.DEMO_OWNER_EMAIL });
+      const preset = (process.env.DEMO_PRESET ?? 'silks') as PresetId;
+      if (!PRESETS[preset]) throw new Error(`DEMO_PRESET must be one of ${Object.keys(PRESETS).join(', ')}`);
+      const r = await seedDemo(app, { slug, preset, password: process.env.DEMO_PASSWORD, ownerEmail: process.env.DEMO_OWNER_EMAIL });
       console.log(`\nDemo store ready: http://${slug}.localhost:3001  (owner@${slug}.test / ${process.env.DEMO_PASSWORD ? 'your DEMO_PASSWORD' : 'demo-password-123'})`);
       console.log(`${r.products} products, ${r.images} images, ${r.customers} customers, ${r.orders} orders`);
       for (const w of r.warnings) console.warn('warning:', w);

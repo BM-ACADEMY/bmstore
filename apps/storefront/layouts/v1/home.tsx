@@ -24,7 +24,7 @@ export function HomeV1(props: HomeProps) {
               <rect width="400" height="400" fill="url(#hero-weave)" />
             </svg>
           )}
-          <div className="relative p-6 sm:p-12 max-w-xl">
+          <div className="relative p-6 sm:p-12 max-w-xl min-w-0">
             <div className="zari-thin w-24 mb-5 !bg-[var(--sf-accent)]" aria-hidden />
             <h1 className="font-heading text-4xl sm:text-6xl leading-[1.05]">{tagline ?? boot.store.name}</h1>
             {tagline && <p className="mt-3 text-base sm:text-lg opacity-90">{boot.store.name}</p>}

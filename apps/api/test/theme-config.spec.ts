@@ -2,14 +2,14 @@ import { DEFAULT_SECTIONS, normalizeSections, normalizeTheme, presentTheme, Them
 
 /** Theme config validation: every value a store can save is a known id, a 6-digit hex or bounded text. */
 describe('theme config validation', () => {
-  it('accepts a complete V2 theme and normalises colours to upper-case hex', () => {
+  it('accepts a complete V2 theme', () => {
     const t = normalizeTheme({
       layoutVariant: 'v2-grocer', paletteId: 'v2-grocer', primaryColor: '#1f6b3a', secondaryColor: '#c8381f', fontPairId: 'baloo-inter',
       headerStyle: 'standard', cardStyle: 'compact', heroType: 'slider', bannerUrls: ['https://cdn.example/a.jpg', 'https://cdn.example/b.jpg'],
       homepageSections: [{ type: 'categories' }, { type: 'hero', tagline: 'Fresh from the mill', enabled: true }],
       options: { corners: 'round', switcherEnabled: true },
     });
-    expect(t.primaryColor).toBe('#1F6B3A');
+    expect(t.primaryColor).toBe('#1f6b3a');
     expect(t.layoutVariant).toBe('v2-grocer');
     expect(t.options).toEqual({ corners: 'round', switcherEnabled: true, heroVideoUrl: null, bilingualLabels: true });
     // order kept, missing sections appended, about disabled without content

@@ -31,7 +31,7 @@ export function HomeV2(props: HomeProps) {
               <rect width="400" height="200" fill="url(#hero-dots)" />
             </svg>
           )}
-          <div className="relative p-5 sm:p-9 max-w-lg">
+          <div className="relative p-5 sm:p-9 max-w-lg min-w-0">
             <h1 className="font-heading text-[2rem] sm:text-5xl leading-[1.08] font-semibold">{tagline ?? boot.store.name}</h1>
             {ship && <p className="mt-2 text-sm sm:text-base opacity-95 inline-flex items-center gap-2"><TruckIcon className="h-5 w-5" />{ship}</p>}
             <Link href={home.hero.ctaHref ?? '/c/all'} className="btn mt-4 h-11 min-h-11 bg-bg text-ink hover:brightness-95 px-6 rounded-pill">{cta}</Link>
@@ -49,9 +49,9 @@ export function HomeV2(props: HomeProps) {
             return (
               <Link key={c.id} href={`/c/${c.slug}`} className="card overflow-hidden flex items-stretch min-h-[88px] group active:scale-[0.99] transition">
                 <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
-                  <div className="font-semibold text-[15px] leading-tight text-ink line-clamp-2">{primary}</div>
+                  <div className="font-semibold text-[15px] leading-tight text-ink line-clamp-3">{primary}</div>
                   {secondary && <div className="mt-0.5 text-[13px] leading-tight text-ink-2 line-clamp-1" lang={lang === 'ta' ? 'en' : 'ta'}>{secondary}</div>}
-                  <div className="mt-1.5 text-[11px] text-ink-3">{t('category.results', { count: c.productCount })}</div>
+                  <div className="mt-1.5 text-[11px] text-ink-3 whitespace-nowrap truncate">{t('category.results', { count: c.productCount })}</div>
                 </div>
                 <div className="relative w-[84px] shrink-0 bg-primary-soft">
                   {c.image ? <Image src={c.image} alt="" fill sizes="96px" className="object-cover transition group-hover:scale-105" /> : <span className="absolute inset-0 grid place-items-center font-heading text-3xl text-primary-text/60">{c.name[0]}</span>}

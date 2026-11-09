@@ -154,7 +154,7 @@ export function normalizeTheme(input: ThemeConfigInput, base?: Partial<Normalize
   const colour = (x: unknown, field: string, fallback: string) => {
     if (x === undefined || x === null || x === '') return fallback;
     if (typeof x !== 'string' || !HEX.test(x)) { problems.push(`${field} must be a 6-digit hex colour like #7A1F2B`); return fallback; }
-    return x.toUpperCase();
+    return x;
   };
   const bannersRaw = v('bannerUrls');
   const banners: string[] = [];
