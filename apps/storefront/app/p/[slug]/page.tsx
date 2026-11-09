@@ -48,9 +48,9 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   const home = { contact: { whatsapp: boot.store.whatsappNumber, phone: boot.store.supportPhone, address: boot.store.address }, shipping: { mode: boot.settings.shippingMode, flatRate: boot.settings.flatRate, freeAbove: boot.settings.freeAbove, codEnabled: boot.settings.codEnabled } } as any;
   return (
     <div className="container-x pt-4 pb-10">
-      <nav aria-label="Breadcrumb" className="text-xs text-ink-3 mb-3 flex gap-1.5 flex-wrap">
-        <Link href="/" className="hover:text-primary-text">{t('nav.home')}</Link><span>/</span>
-        {p.category && <><Link href={`/c/${p.category.slug}`} className="hover:text-primary-text">{catName}</Link><span>/</span></>}
+      <nav aria-label="Breadcrumb" className="text-xs text-ink-3 mb-1 flex items-center gap-1.5 flex-wrap">
+        <Link href="/" className="inline-flex items-center justify-center min-h-11 min-w-11 px-1 -mx-1 hover:text-primary-text">{t('nav.home')}</Link><span>/</span>
+        {p.category && <><Link href={`/c/${p.category.slug}`} className="inline-flex items-center justify-center min-h-11 min-w-11 px-1 -mx-1 hover:text-primary-text">{catName}</Link><span>/</span></>}
         <span className="text-ink-2 truncate max-w-[60vw]">{p.name}</span>
       </nav>
       <div className={`grid gap-8 lg:gap-14 ${layout === 'v2-grocer' ? 'lg:grid-cols-[minmax(0,480px)_1fr]' : 'lg:grid-cols-[minmax(0,560px)_1fr]'}`}>

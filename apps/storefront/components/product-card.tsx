@@ -107,12 +107,12 @@ function CompactCard({ p, priority }: { p: CardProduct; priority: boolean }) {
         {!available && <span className="absolute inset-x-0 bottom-0 bg-ink/70 py-1 text-center text-[11px] font-semibold text-bg">{t('product.outOfStock')}</span>}
       </Link>
       <div className="p-2.5 pt-2 flex flex-col gap-2 flex-1">
-        <Link href={`/p/${p.slug}`} className="text-[14px] leading-snug text-ink line-clamp-2 min-h-[2.5em] font-medium">{p.name}</Link>
+        <Link href={`/p/${p.slug}`} className="block text-[14px] leading-snug text-ink line-clamp-2 min-h-11 font-medium">{p.name}</Link>
         {pickable ? (
           <div className="flex flex-wrap gap-1.5" role="group" aria-label={withIds[0].optionName}>
             {withIds.map((v) => (
               <button key={v.id} type="button" onClick={() => setVariantId(v.id)} disabled={v.stock <= 0} aria-pressed={v.id === variantId}
-                className={`h-8 px-2.5 rounded-pill border text-[12px] font-medium ${v.id === variantId ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-ink-2'} ${v.stock <= 0 ? 'opacity-40 line-through' : ''}`}>{v.optionValue}</button>
+                className={`h-11 px-3 rounded-pill border text-[13px] font-medium ${v.id === variantId ? 'bg-ink text-bg border-ink' : 'bg-surface border-line text-ink-2'} ${v.stock <= 0 ? 'opacity-40 line-through' : ''}`}>{v.optionValue}</button>
             ))}
           </div>
         ) : optionCount > 0 ? <div className="text-xs text-ink-3">{t('product.options', { count: optionCount })}</div> : null}
@@ -123,16 +123,16 @@ function CompactCard({ p, priority }: { p: CardProduct; priority: boolean }) {
           </div>
           {canAdd ? (
             qty === 0 ? (
-              <button type="button" onClick={() => add(1)} className="h-10 min-w-[72px] px-3 rounded-card bg-primary text-on-primary text-sm font-bold active:scale-[0.98]" aria-label={`${t('product.addToCart')}: ${p.name}`}>{t('card.add')}</button>
+              <button type="button" onClick={() => add(1)} className="h-11 min-w-[76px] px-3 rounded-card bg-primary text-on-primary text-sm font-bold active:scale-[0.98]" aria-label={`${t('product.addToCart')}: ${p.name}`}>{t('card.add')}</button>
             ) : (
-              <div className="inline-flex items-center h-10 rounded-card bg-primary text-on-primary font-bold" aria-live="polite">
-                <button type="button" onClick={() => add(-1)} className="h-10 w-10 text-xl leading-none" aria-label={`${t('card.minus')}: ${p.name}`}>−</button>
+              <div className="inline-flex items-center h-11 rounded-card bg-primary text-on-primary font-bold" aria-live="polite">
+                <button type="button" onClick={() => add(-1)} className="h-11 w-11 text-xl leading-none" aria-label={`${t('card.minus')}: ${p.name}`}>−</button>
                 <span className="min-w-5 text-center text-sm tabular-nums">{qty}</span>
-                <button type="button" onClick={() => add(1)} disabled={qty >= max} className="h-10 w-10 text-xl leading-none disabled:opacity-40" aria-label={`${t('card.plus')}: ${p.name}`}>+</button>
+                <button type="button" onClick={() => add(1)} disabled={qty >= max} className="h-11 w-11 text-xl leading-none disabled:opacity-40" aria-label={`${t('card.plus')}: ${p.name}`}>+</button>
               </div>
             )
           ) : withIds.length > 4 ? (
-            <Link href={`/p/${p.slug}`} className="h-10 px-3 inline-flex items-center rounded-card border border-primary text-primary-text text-sm font-semibold">{t('card.choose')}</Link>
+            <Link href={`/p/${p.slug}`} className="h-11 px-3 inline-flex items-center rounded-card border border-primary text-primary-text text-sm font-semibold">{t('card.choose')}</Link>
           ) : (
             <span className="h-10 inline-flex items-center text-xs text-ink-3">{available ? '' : t('product.outOfStock')}</span>
           )}

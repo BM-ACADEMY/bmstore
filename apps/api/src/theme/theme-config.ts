@@ -163,7 +163,9 @@ export function normalizeTheme(input: ThemeConfigInput, base?: Partial<Normalize
     else { if (bannersRaw.length > 10) problems.push('bannerUrls: at most 10 banners'); for (const b of bannersRaw.slice(0, 10)) { const u = url(b, 'bannerUrls', problems); if (u) banners.push(u); } }
   }
   const heroType = pick(v('heroType'), HERO_TYPES, {}, 'banner', 'heroType', problems);
-  const options = normalizeOptions(v('options'), problems);
+  // options is a bag: a partial PUT merges over the stored options rather than replacing them
+  const baseOptions = (base as any)?.options && typeof (base as any).options === 'object' ? (base as any).options : {};
+  const options = normalizeOptions(input.options && typeof input.options === 'object' && !Array.isArray(input.options) ? { ...baseOptions, ...(input.options as object) } : v('options'), problems);
   if (heroType === 'video' && !options.heroVideoUrl) problems.push('heroType video needs options.heroVideoUrl');
   const theme: NormalizedTheme = {
     layoutVariant: pick(v('layoutVariant'), LAYOUTS, LAYOUT_ALIASES, 'v1-textile', 'layoutVariant', problems),

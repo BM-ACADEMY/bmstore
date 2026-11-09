@@ -76,11 +76,11 @@ export function CartView() {
         <ul className="divide-y divide-line">
           {lines.map((l) => (
             <li key={`${l.productId}:${l.variantId}`} className="flex gap-4 py-4">
-              <Link href={`/p/${l.slug}`} className={`relative shrink-0 overflow-hidden rounded-card bg-primary-soft ${layout === 'v1-textile' ? 'h-28 w-[88px]' : 'h-20 w-20'}`}>
+              <Link href={`/p/${l.slug}`} aria-label={l.name} className={`relative shrink-0 overflow-hidden rounded-card bg-primary-soft ${layout === 'v1-textile' ? 'h-28 w-[88px]' : 'h-20 w-20'}`}>
                 {l.image ? <Image src={l.image} alt="" fill sizes="88px" className="object-cover" /> : <Placeholder label={l.name} />}
               </Link>
               <div className="min-w-0 flex-1">
-                <Link href={`/p/${l.slug}`} className="font-medium leading-snug line-clamp-2">{l.name}</Link>
+                <Link href={`/p/${l.slug}`} className="inline-block font-medium leading-snug line-clamp-2 min-h-11 py-1">{l.name}</Link>
                 {l.variantLabel && <div className="text-sm text-ink-3 mt-0.5">{l.variantLabel}</div>}
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <div className="inline-flex items-center rounded-card border border-line bg-surface">
@@ -90,7 +90,7 @@ export function CartView() {
                   </div>
                   <div className="font-semibold">{rupees(l.unitPrice * l.qty)}</div>
                 </div>
-                <button type="button" className="mt-1 h-9 text-xs text-ink-3 underline underline-offset-4 hover:text-bad" onClick={() => remove(l.productId, l.variantId)}>{t('cart.remove')}</button>
+                <button type="button" className="mt-1 min-h-11 px-1 -ml-1 text-xs text-ink-3 underline underline-offset-4 hover:text-bad" onClick={() => remove(l.productId, l.variantId)}>{t('cart.remove')}</button>
               </div>
             </li>
           ))}

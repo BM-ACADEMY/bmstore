@@ -32,7 +32,7 @@ export function Header({ categories, pages }: { categories: Cat[]; pages: Array<
   const minimal = style === 'minimal';
   const centered = style === 'centered-logo';
   const brand = (
-    <Link href="/" className={`flex items-center gap-3 min-w-0 ${centered ? 'justify-self-center flex-col gap-1 py-1 text-center' : 'justify-self-center lg:justify-self-start'}`} aria-label={store.name}>
+    <Link href="/" className={`flex items-center gap-3 min-w-0 min-h-11 ${centered ? 'justify-self-center flex-col gap-1 py-1 text-center' : 'justify-self-center lg:justify-self-start'}`} aria-label={store.name}>
       {logoUrl ? <Image src={logoUrl} alt="" width={centered ? 48 : 40} height={centered ? 48 : 40} className={`${centered ? 'h-12 w-12' : 'h-10 w-10'} rounded-full object-cover`} priority /> : minimal ? <span className="grid h-9 w-9 place-items-center rounded-pill bg-primary text-on-primary font-heading text-lg font-semibold" aria-hidden>{store.name.trim()[0]}</span> : null}
       <span className={`font-heading font-semibold text-primary-text truncate ${centered ? 'text-lg sm:text-2xl' : minimal ? 'text-lg' : 'text-xl sm:text-2xl'}`}>{store.name}</span>
     </Link>

@@ -75,7 +75,7 @@ img { color: transparent; }
 @utility field { @apply w-full tap rounded-card border border-line bg-surface px-4 text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary; }
 @utility label { @apply block text-sm font-medium text-ink-2 mb-1.5; }
 @utility eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-text; }
-@utility chip { @apply inline-flex items-center h-10 px-4 rounded-pill border border-line bg-surface text-sm font-medium whitespace-nowrap; }
+@utility chip { @apply inline-flex items-center h-11 px-4 rounded-pill border border-line bg-surface text-sm font-medium whitespace-nowrap; }
 @utility chip-on { @apply chip bg-ink text-bg border-ink; }
 @utility price-strike { @apply text-ink-3 line-through decoration-ink-3/60; }
 @utility scroll-x { @apply flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]; }

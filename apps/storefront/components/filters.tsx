@@ -67,10 +67,10 @@ export function Filters({ facets, total }: { facets: Facets; total: number }) {
       <div className="text-sm text-ink-2">{t('category.results', { count: total })}</div>
       <div className="flex items-center gap-2">
         <label className="sr-only" htmlFor="sort">{t('category.sort')}</label>
-        <select id="sort" className="field !w-auto h-10 min-h-0 py-0 pr-8 text-sm" value={sp.get('sort') ?? 'featured'} onChange={(e) => { const next = new URLSearchParams(sp.toString()); next.set('sort', e.target.value); push(next); }}>
+        <select id="sort" className="field !w-auto h-11 min-h-11 py-0 pr-8 text-sm" value={sp.get('sort') ?? 'featured'} onChange={(e) => { const next = new URLSearchParams(sp.toString()); next.set('sort', e.target.value); push(next); }}>
           {SORTS.map((s) => <option key={s} value={s}>{t(`category.sort.${s}`)}</option>)}
         </select>
-        <button type="button" className="chip h-10 lg:hidden" onClick={() => setOpen(true)} aria-expanded={open}>{t('category.filters')}{active ? ` · ${active}` : ''}</button>
+        <button type="button" className="chip lg:hidden" onClick={() => setOpen(true)} aria-expanded={open}>{t('category.filters')}{active ? ` · ${active}` : ''}</button>
       </div>
       <aside className="hidden lg:block fixed left-[max(1.5rem,calc((100vw-72rem)/2+1.5rem))] top-28 w-60" aria-label={t('category.filters')}>{panel}</aside>
       {open && (

@@ -30,7 +30,7 @@ export function HeroMedia({ hero, sizes = '(min-width: 1152px) 1152px, 100vw', c
             <Image key={u} src={u} alt="" fill priority={n === 0} fetchPriority={n === 0 ? 'high' : undefined} sizes={sizes} className={`object-cover transition-opacity duration-700 ${n === i ? 'opacity-100' : 'opacity-0'}`} aria-hidden={n !== i} />
           ))}
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10" role="tablist" aria-label="Banners">
-            {urls.map((u, n) => <button key={u} type="button" role="tab" aria-selected={n === i} aria-label={`${n + 1}`} onClick={() => setI(n)} className="h-11 w-6 grid place-items-center"><span className={`block h-1.5 rounded-pill transition-all ${n === i ? 'w-5 bg-white' : 'w-1.5 bg-white/60'}`} /></button>)}
+            {urls.map((u, n) => <button key={u} type="button" role="tab" aria-selected={n === i} aria-label={`${n + 1}`} onClick={() => setI(n)} className="h-11 w-11 grid place-items-center"><span className={`block h-1.5 rounded-pill transition-all ${n === i ? 'w-5 bg-white' : 'w-1.5 bg-white/60'}`} /></button>)}
           </div>
         </>
       ) : urls[0] ? (
