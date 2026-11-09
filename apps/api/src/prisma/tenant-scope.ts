@@ -51,6 +51,11 @@ export const SCOPES: Record<string, Scope> = {
   Payment: { kind: 'direct' },
   WebhookEvent: { kind: 'direct' },
   AuditLog: { kind: 'direct', nullable: true },
+  StoreIntake: { kind: 'direct' },
+  StoreDomain: { kind: 'direct' },
+  QaRun: { kind: 'direct' },
+  RefundCase: { kind: 'direct' },
+  OutboxEvent: { kind: 'direct' },
 };
 
 /** Tenants may only edit these columns of their own tenant row. Plan/status/expiry/domains: superadmin only. */

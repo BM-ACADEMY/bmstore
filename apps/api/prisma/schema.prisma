@@ -104,6 +104,8 @@ model Tenant {
   /// Fair-use limits (superadmin-editable). Counted in tenant_usage by triggers.
   maxProducts       Int          @default(2000) @map("max_products")
   maxMediaMb        Int          @default(10240) @map("max_media_mb")
+  /// Set by the console's go-live action. Renewal reminders count days from here (day 305, day 335).
+  wentLiveAt        DateTime?    @map("went_live_at")
 
   themeConfig         ThemeConfig?
   settings            Settings?
@@ -119,6 +121,11 @@ model Tenant {
   passwordResetTokens PasswordResetToken[]
   media               Media[]
   usage               TenantUsage?
+  intake              StoreIntake?
+  domainMapping       StoreDomain?
+  qaRuns              QaRun[]
+  refundCases         RefundCase[]
+  outboxEvents        OutboxEvent[]
   payments            Payment[]
   webhookEvents       WebhookEvent[]
 
@@ -493,4 +500,152 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@index([actorId, createdAt])
   @@map("audit_logs")
+}
+
+// Phase 5: the client's intake form, one per store. Created by the console's "create store from intake" (idempotent
+// on intake_key). The delivery clock (7 working days) starts at completed_at; chasers/parking read received_at.
+model StoreIntake {
+  tenantId       String    @id @map("tenant_id") @db.Uuid
+  /// Idempotency key: given by the caller, or derived from email + business name. Same key => same store.
+  intakeKey      String    @unique @map("intake_key")
+  businessName   String    @map("business_name")
+  ownerName      String?   @map("owner_name")
+  whatsapp       String?
+  email          String?
+  category       String?
+  logoUrl        String?   @map("logo_url")
+  brandColors    String[]  @map("brand_colors")
+  /// File name or link of the client's product sheet (the import itself is a separate console step).
+  productSheet   String?   @map("product_sheet")
+  gstNumber      String?   @map("gst_number")
+  address        String?
+  domain         String?
+  /// not_started | kyc_pending | active | not_needed (COD only)
+  razorpayStatus String    @default("not_started") @map("razorpay_status")
+  /// { mode: FLAT|FREE|FREE_ABOVE, flatRatePaise, freeAbovePaise, notes }
+  shipping       Json      @default("{}")
+  codEnabled     Boolean?  @map("cod_enabled")
+  codChargePaise Int       @default(0) @map("cod_charge_paise")
+  aboutText      String?   @map("about_text")
+  layout         String    @default("classic")
+  receivedAt     DateTime  @default(now()) @map("received_at")
+  completedAt    DateTime? @map("completed_at")
+  chasersSent    Int       @default(0) @map("chasers_sent")
+  lastChasedAt   DateTime? @map("last_chased_at")
+  parkedAt       DateTime? @map("parked_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([completedAt, receivedAt])
+  @@map("store_intakes")
+}
+
+// Phase 5: the client's own domain. tenants.custom_domain (what routing and Caddy's on-demand TLS gate use) is set
+// only once the CNAME to PLATFORM_BASE_DOMAIN is verified, so certificates are never requested for unverified names.
+model StoreDomain {
+  tenantId      String    @id @map("tenant_id") @db.Uuid
+  domain        String    @unique
+  /// pending | verified | failed
+  dnsStatus     String    @default("pending") @map("dns_status")
+  /// What DNS answered at the last check (CNAME targets or A records), for the developer to compare.
+  dnsSeen       String[]  @map("dns_seen")
+  dnsCheckedAt  DateTime? @map("dns_checked_at")
+  verifiedAt    DateTime? @map("verified_at")
+  /// unknown | valid | invalid | skipped
+  sslStatus     String    @default("unknown") @map("ssl_status")
+  sslDetail     String?   @map("ssl_detail")
+  sslExpiresAt  DateTime? @map("ssl_expires_at")
+  sslCheckedAt  DateTime? @map("ssl_checked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("store_domains")
+}
+
+// Phase 5: one automated QA run (structured pass/fail per check). Go-live needs the latest run to have passed.
+model QaRun {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  passed      Boolean
+  /// [{ id, label, status: pass|fail|skipped, detail, durationMs }]
+  results     Json
+  /// superadmin who ran it; null when a job did
+  triggeredBy String?   @map("triggered_by") @db.Uuid
+  startedAt   DateTime  @default(now()) @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, startedAt])
+  @@map("qa_runs")
+}
+
+// Phase 5: refund helper for the store-delivery guarantee (platform -> client). The rule is applied in code
+// (src/console/refund-rule.ts), a human approves, then the Razorpay refund API (test mode) and a credit note.
+model RefundCase {
+  id                     String    @id @default(uuid()) @db.Uuid
+  tenantId               String    @map("tenant_id") @db.Uuid
+  /// not_delivered | change_of_mind | other
+  reason                 String
+  note                   String?
+  /// Working days of documented client-side delay (late details, Razorpay KYC): they push the deadline out.
+  clientDelayWorkingDays Int       @default(0) @map("client_delay_working_days")
+  clientDelayNote        String?   @map("client_delay_note")
+  amountPaidPaise        Int       @map("amount_paid_paise") // what the client paid us, GST included
+  gstPaise               Int       @map("gst_paise")
+  /// Razorpay payment id of the client's setup fee on the platform account (pay_...)
+  paymentId              String?   @map("payment_id")
+  invoiceRef             String?   @map("invoice_ref")
+  eligible               Boolean
+  /// the rule's verdict at the last evaluation: { eligible, rule, explanation[], deadline, refundPaise }
+  decision               Json
+  /// open | processing | refunded | rejected | failed
+  status                 String    @default("open")
+  createdBy              String?   @map("created_by") @db.Uuid
+  approvedBy             String?   @map("approved_by") @db.Uuid
+  approvedAt             DateTime? @map("approved_at")
+  /// approval + 7 working days
+  processBy              DateTime? @map("process_by")
+  refundId               String?   @map("refund_id")
+  refundStub             Boolean   @default(false) @map("refund_stub")
+  refundError            String?   @map("refund_error")
+  creditNoteNo           String?   @unique @map("credit_note_no")
+  creditNote             Json?     @map("credit_note")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([status])
+  @@map("refund_cases")
+}
+
+// Phase 5: every notification (stubbed WhatsApp/email) and outbound webhook a store causes, recorded once.
+// dedupe_key makes jobs idempotent: a reminder for (tenant, key) is only ever sent once, whatever re-runs.
+model OutboxEvent {
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  /// notice | webhook
+  kind      String
+  /// e.g. intake.chaser, renewal.reminder, store.created
+  event     String
+  dedupeKey String?   @map("dedupe_key")
+  /// no secrets, ever
+  payload   Json      @default("{}")
+  /// pending | sent | stubbed | skipped | failed
+  status    String    @default("pending")
+  attempts  Int       @default(0)
+  lastError String?   @map("last_error")
+  createdAt DateTime  @default(now()) @map("created_at")
+  sentAt    DateTime? @map("sent_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dedupeKey])
+  @@index([tenantId, createdAt])
+  @@index([kind, status])
+  @@map("outbox_events")
 }
