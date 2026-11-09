@@ -55,6 +55,8 @@ describe('console: stores, lifecycle, impersonation, renewals, usage, refunds, a
     expect(d.tenant.razorpayKeyEnc).toBeUndefined();
     expect((await s.call('post', `/superadmin/console/stores/${id}/go-live`).expect(409)).body.message).toBe('Run QA first');
 
+    // QA places a real test order, so the store needs a live product in stock
+    await s.call('post', `/superadmin/console/stores/${id}/import/products?filename=p.csv`).set('Content-Type', 'text/csv').send('name,price,mrp,sku,stock\nMug,199,249,M-1,5').expect(200);
     // failing QA blocks
     await prisma.runAsTenant(id, () => prisma.db.page.deleteMany({ where: { slug: 'privacy-policy' } }));
     await s.call('post', `/superadmin/console/stores/${id}/qa`).expect(200);

@@ -9,13 +9,12 @@ import { DomainService } from './domain.service';
 import { ConsoleEvents } from './events';
 import { TlsProbe } from './net-probes';
 import { REQUIRED_POLICIES } from './policies';
-import { RazorpayProbe, StorefrontProbe, StorefrontTarget } from './qa-probes';
+import { ProbeSkipped, RazorpayProbe, StorefrontProbe, StorefrontTarget } from './qa-probes';
 
 export type CheckStatus = 'pass' | 'fail' | 'skipped';
 export interface CheckResult { id: string; label: string; status: CheckStatus; detail: string; durationMs: number }
 
 export const LIGHTHOUSE_MIN = 85;
-export const STOREFRONT_NOT_MERGED = 'skipped: storefront not merged';
 /** A policy page shorter than this is treated as a placeholder, not a policy. */
 const MIN_POLICY_CHARS = 200;
 
@@ -30,7 +29,7 @@ export const QA_CHECKS = [
 ] as const;
 type CheckId = (typeof QA_CHECKS)[number]['id'];
 
-interface Ctx { tenantId: string; target: StorefrontTarget; orderNo?: string }
+interface Ctx { tenantId: string; target: StorefrontTarget; orderNo?: string; orderId?: string }
 
 class Skip extends Error {}
 class Fail extends Error {}
@@ -57,17 +56,16 @@ export class QaService {
 
   private readonly checks: Record<CheckId, (c: Ctx) => Promise<string>> = {
     test_order: async (c) => {
-      if (!this.storefront.available) throw new Skip(STOREFRONT_NOT_MERGED);
       const o = await this.storefront.placeTestOrder(c.target);
       c.orderNo = o.orderNo;
-      return `Order ${o.orderNo} placed`;
+      c.orderId = o.orderId;
+      return `Order ${o.orderNo} placed (₹${(o.totalPaise / 100).toLocaleString('en-IN')}); cancelled and restocked after the invoice check`;
     },
     invoice: async (c) => {
-      if (!this.storefront.available) throw new Skip(STOREFRONT_NOT_MERGED);
       if (!c.orderNo) throw new Fail('No test order to invoice (the test order check failed)');
       const inv = await this.storefront.fetchInvoice(c.target, c.orderNo);
       if (!inv.invoiceNo) throw new Fail('Invoice has no number');
-      return `Invoice ${inv.invoiceNo} generated`;
+      return `Invoice for ${inv.invoiceNo} generated (PDF, ${Math.round(inv.bytes / 1024)} KB)`;
     },
     owner_alert: async (c) => {
       const t = await this.db.tenant.findUniqueOrThrow({ where: { id: c.tenantId } });
@@ -80,7 +78,6 @@ export class QaService {
       return `Delivered by ${channel}${d.transport === 'stub' ? ' (stub transport: no WhatsApp provider wired yet)' : ''}`;
     },
     lighthouse_mobile: async (c) => {
-      if (!this.storefront.available) throw new Skip(STOREFRONT_NOT_MERGED);
       const { performance } = await this.storefront.lighthouseMobile(c.target);
       if (performance < LIGHTHOUSE_MIN) throw new Fail(`Mobile performance ${performance} (needs ${LIGHTHOUSE_MIN}+)`);
       return `Mobile performance ${performance}`;
@@ -128,11 +125,17 @@ export class QaService {
         try {
           detail = await this.checks[c.id](ctx);
         } catch (e: any) {
-          if (e instanceof Skip) { status = 'skipped'; detail = e.message; }
+          if (e instanceof Skip || e instanceof ProbeSkipped) { status = 'skipped'; detail = e.message; }
           else if (e instanceof Fail) { status = 'fail'; detail = e.message; }
           else { status = 'fail'; detail = `Check crashed: ${String(e?.message ?? e).slice(0, 200)}`; }
         }
         results.push({ id: c.id, label: c.label, status, detail, durationMs: Date.now() - t0 });
+        // The test order never stays open: cancel + restock right after its invoice was checked.
+        if (c.id === 'invoice' && ctx.orderId) {
+          try { await this.storefront.cleanup(ctx.target, ctx.orderId); } catch (e: any) {
+            results.push({ id: 'test_order_cleanup', label: 'Test order cancelled', status: 'fail', detail: `Cancel it by hand: ${String(e?.message ?? e).slice(0, 200)}`, durationMs: 0 });
+          }
+        }
       }
     }, actor ?? undefined);
     const passed = results.every((r) => r.status !== 'fail');

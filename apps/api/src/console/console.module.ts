@@ -12,7 +12,8 @@ import { DomainService } from './domain.service';
 import { CryptoModule } from '../crypto/crypto.module';
 import { QaController } from './qa.controller';
 import { QaService } from './qa.service';
-import { HttpRazorpayProbe, RazorpayProbe, StorefrontProbe, UnmergedStorefrontProbe } from './qa-probes';
+import { HttpRazorpayProbe, InProcessStorefrontProbe, RazorpayProbe, StorefrontProbe } from './qa-probes';
+import { StorefrontModule } from '../storefront/storefront.module';
 import { ImpersonationRedeemController, StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
 import { RefundService } from './refund.service';
@@ -28,10 +29,10 @@ import { IntakeService } from './intake.service';
 import { PolicyService } from './policy.service';
 
 @Module({
-  imports: [AuthModule, SuperadminModule, ImportModule, MediaModule, LimitsModule, SettingsModule, CryptoModule],
+  imports: [AuthModule, SuperadminModule, ImportModule, MediaModule, LimitsModule, SettingsModule, CryptoModule, StorefrontModule],
   controllers: [ConsoleController, BuildController, DomainController, QaController, StoresController, ImpersonationRedeemController, EventsController],
   providers: [ConsoleScope, PolicyService, IntakeService, ConsoleEvents, BuildService, DomainService, { provide: DnsResolver, useClass: NodeDnsResolver }, { provide: TlsProbe, useClass: NodeTlsProbe },
-    QaService, { provide: StorefrontProbe, useClass: UnmergedStorefrontProbe }, { provide: RazorpayProbe, useClass: HttpRazorpayProbe },
+    QaService, { provide: StorefrontProbe, useClass: InProcessStorefrontProbe }, { provide: RazorpayProbe, useClass: HttpRazorpayProbe },
     StoresService, RefundService, OutboxService, WebhookService, { provide: RefundGateway, useClass: RazorpayRefundGateway }],
   exports: [ConsoleScope, PolicyService, IntakeService, ConsoleEvents, BuildService, DomainService, QaService, StoresService, RefundService, OutboxService, WebhookService],
 })

@@ -3,22 +3,24 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/app.setup';
 import { TenantSecretsService } from '../src/crypto/tenant-secrets.service';
-import { RazorpayProbe, StorefrontProbe, StorefrontTarget } from '../src/console/qa-probes';
-import { STOREFRONT_NOT_MERGED } from '../src/console/qa.service';
+import { ProbeSkipped, RazorpayProbe, StorefrontProbe, StorefrontTarget } from '../src/console/qa-probes';
 import { Notifier, Notice, StubNotifier } from '../src/notify/notifier';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { deleteTenants, uniq } from './helpers';
 import { cleanupSuperadmin, superadminSession } from './console-helpers';
 
-/** Switchable probes: the default behaves like production before S3 merges (storefront unavailable). */
+/** Switchable storefront probe for the failure paths (the real in-process probe is tested in console-qa-storefront.spec.ts). */
+const LH_SKIP = 'skipped: Lighthouse not installed on this server (set LIGHTHOUSE_BIN and CHROME_PATH)';
 class FakeStorefront extends StorefrontProbe {
-  available = false;
   order: 'ok' | 'throw' = 'ok';
   invoiceNo = 'INV-0001';
-  score = 92;
-  async placeTestOrder(_t: StorefrontTarget) { if (this.order === 'throw') throw new Error('checkout returned 500'); return { orderNo: 'TEST-1', totalPaise: 10000 }; }
-  async fetchInvoice() { return { invoiceNo: this.invoiceNo, totalPaise: 10000 }; }
-  async lighthouseMobile() { return { performance: this.score }; }
+  score: number | null = null; // null = Lighthouse not configured
+  cleaned: string[] = [];
+  cleanupFails = false;
+  async placeTestOrder(_t: StorefrontTarget) { if (this.order === 'throw') throw new Error('checkout returned 500'); return { orderNo: 'TEST-1', orderId: 'o-1', totalPaise: 10000 }; }
+  async fetchInvoice() { return { invoiceNo: this.invoiceNo, totalPaise: 10000, bytes: 4096 }; }
+  async cleanup(_t: StorefrontTarget, orderId: string) { if (this.cleanupFails) throw new Error('db down'); this.cleaned.push(orderId); }
+  async lighthouseMobile() { if (this.score === null) throw new ProbeSkipped(LH_SKIP); return { performance: this.score }; }
 }
 class FakeRazorpay extends RazorpayProbe {
   mode: 'ok' | 'reject' | 'crash' = 'ok';
@@ -67,19 +69,20 @@ describe('QA runner', () => {
     prisma = app.get(PrismaService);
     s = await superadminSession(app);
   });
-  afterEach(() => { sf.available = false; sf.order = 'ok'; sf.score = 92; sf.invoiceNo = 'INV-0001'; rzp.mode = 'ok'; notifier.fail = false; });
+  afterEach(() => { sf.order = 'ok'; sf.score = null; sf.cleanupFails = false; sf.invoiceNo = 'INV-0001'; rzp.mode = 'ok'; notifier.fail = false; });
   afterAll(async () => {
     await deleteTenants(prisma.base, ids);
     await cleanupSuperadmin(app, s.id);
     await app.close();
   });
 
-  it('before the storefront merges: test order, invoice and Lighthouse are "skipped: storefront not merged"; a good store passes', async () => {
+  it('a good store passes; Lighthouse without LIGHTHOUSE_BIN is skipped with the reason; the test order is always cleaned up', async () => {
     const tid = await store();
     await setKeys(tid, 'rzp_live_abcd1234');
     const r = await run(tid);
-    expect(statusOf(r)).toEqual({ test_order: 'skipped', invoice: 'skipped', owner_alert: 'pass', lighthouse_mobile: 'skipped', ssl_valid: 'skipped', policy_pages: 'pass', payment_keys: 'pass' });
-    for (const id of ['test_order', 'invoice', 'lighthouse_mobile']) expect(detailOf(r, id)).toBe(STOREFRONT_NOT_MERGED);
+    expect(statusOf(r)).toEqual({ test_order: 'pass', invoice: 'pass', owner_alert: 'pass', lighthouse_mobile: 'skipped', ssl_valid: 'skipped', policy_pages: 'pass', payment_keys: 'pass' });
+    expect(detailOf(r, 'lighthouse_mobile')).toBe(LH_SKIP);
+    expect(sf.cleaned).toContain('o-1');
     expect(detailOf(r, 'ssl_valid')).toBe('SSL check skipped locally');
     expect(detailOf(r, 'owner_alert')).toContain('stub transport');
     expect(r.passed).toBe(true);
@@ -139,12 +142,12 @@ describe('QA runner', () => {
     expect(detailOf(r, 'owner_alert')).toBe('No owner WhatsApp number or email to alert');
   });
 
-  it('with a storefront (after S3 merges): Lighthouse below 85 fails; a failed test order fails the invoice too', async () => {
+  it('Lighthouse below 85 fails; a failed test order fails the invoice too; a failed cleanup is reported', async () => {
     const tid = await store({ razorpayStatus: 'not_needed' });
-    sf.available = true;
+    sf.score = 92;
     let r = await run(tid);
     expect(statusOf(r)).toMatchObject({ test_order: 'pass', invoice: 'pass', lighthouse_mobile: 'pass' });
-    expect(detailOf(r, 'invoice')).toBe('Invoice INV-0001 generated');
+    expect(detailOf(r, 'invoice')).toBe('Invoice for INV-0001 generated (PDF, 4 KB)');
     expect(r.passed).toBe(true);
 
     sf.score = 71;
@@ -164,6 +167,13 @@ describe('QA runner', () => {
     sf.invoiceNo = '';
     r = await run(tid);
     expect(detailOf(r, 'invoice')).toBe('Invoice has no number');
+
+    sf.invoiceNo = 'INV-0002';
+    sf.cleanupFails = true;
+    r = await run(tid);
+    expect(statusOf(r).test_order_cleanup).toBe('fail');
+    expect(detailOf(r, 'test_order_cleanup')).toBe('Cancel it by hand: db down');
+    expect(r.passed).toBe(false);
   });
 
   it('runs are stored per store and listed newest first; another store never sees them', async () => {

@@ -73,10 +73,12 @@ describe('outbound n8n webhooks', () => {
     await s.call('post', '/superadmin/console/intake').send(full(k)).expect(200);
     expect(forStore(r.store.id).filter((x) => x.body.event === 'store.created')).toHaveLength(1);
 
+    await s.call('post', `/superadmin/console/stores/${r.store.id}/import/products?filename=p.csv`).set('Content-Type', 'text/csv').send('name,price,mrp,sku,stock\nMug,199,249,M-1,5').expect(200);
     await s.call('post', `/superadmin/console/stores/${r.store.id}/qa`).expect(200);
     const qa = forStore(r.store.id).find((x) => x.body.event === 'qa.result')!;
     expect(qa.body.data).toMatchObject({ passed: true, failed: [] });
-    expect(qa.body.data.skipped).toEqual(expect.arrayContaining(['test_order', 'invoice', 'lighthouse_mobile']));
+    expect(qa.body.data.skipped).toEqual(expect.arrayContaining(['lighthouse_mobile']));
+    expect(qa.body.data.skipped).not.toContain('test_order');
 
     await s.call('post', `/superadmin/console/stores/${r.store.id}/go-live`).expect(200);
     const live = forStore(r.store.id).find((x) => x.body.event === 'store.live')!;
