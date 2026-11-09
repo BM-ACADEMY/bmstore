@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Job, Queue, Worker } from 'bullmq';
 import { AppConfig } from '../config/app-config';
-import { JOB_NAMES, JobName, JobsService } from './jobs.service';
+import { JOB_NAMES, JobName, PlatformJobsService } from './platform-jobs.service';
 import { MAX_WEBHOOK_ATTEMPTS, WebhookService } from '../console/webhooks';
 
 export const QUEUE = 'bmstore-jobs';
@@ -38,10 +38,10 @@ export class JobsScheduler implements OnModuleInit, OnModuleDestroy {
   private worker?: Worker;
   readonly handlers = new Map<string, (data: any) => Promise<unknown>>();
 
-  constructor(private readonly cfg: AppConfig, private readonly jobs: JobsService, private readonly webhooks: WebhookService) {}
+  constructor(private readonly cfg: AppConfig, private readonly jobs: PlatformJobsService, private readonly webhooks: WebhookService) {}
 
   async onModuleInit() {
-    if (!this.cfg.jobsEnabled) return;
+    if (!this.cfg.platformJobsEnabled) return;
     await this.start();
   }
 

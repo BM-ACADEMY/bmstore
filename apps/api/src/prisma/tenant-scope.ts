@@ -48,6 +48,8 @@ export const SCOPES: Record<string, Scope> = {
   PasswordResetToken: { kind: 'direct', nullable: true },
   Media: { kind: 'direct' },
   TenantUsage: { kind: 'direct' },
+  Payment: { kind: 'direct' },
+  WebhookEvent: { kind: 'direct' },
   AuditLog: { kind: 'direct', nullable: true },
   StoreIntake: { kind: 'direct' },
   StoreDomain: { kind: 'direct' },
@@ -59,7 +61,7 @@ export const SCOPES: Record<string, Scope> = {
 /** Tenants may only edit these columns of their own tenant row. Plan/status/expiry/domains: superadmin only. */
 // (maxProducts / maxMediaMb are fair-use limits: superadmin only, like plan.)
 const TENANT_SELF_WRITABLE = new Set([
-  'name', 'address', 'gstNumber', 'supportPhone', 'whatsappNumber', 'razorpayKeyEnc', 'razorpaySecretEnc',
+  'name', 'address', 'gstNumber', 'supportPhone', 'whatsappNumber', 'razorpayKeyEnc', 'razorpaySecretEnc', 'razorpayWebhookSecretEnc',
 ]);
 
 /** audit_logs is append-only for tenant code. */

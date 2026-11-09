@@ -4,8 +4,9 @@ One multi-tenant ecommerce platform. Each client store is a tenant; one codebase
 Node.js · NestJS 11 · Prisma 6 · PostgreSQL 16 (single DB, `tenant_id` on every tenant-scoped row, row-level security on every table) · Redis · TypeScript.
 
 ```
-apps/api      NestJS API (tenancy, RLS, auth, store admin API, import, media, limits, superadmin, isolation gate)
-apps/admin    Next.js store-owner admin (mobile-first; talks to the API through a same-origin cookie proxy)
+apps/api        NestJS API (tenancy, RLS, auth, store admin API, import, media, limits, superadmin, storefront API, checkout, payments, invoices, jobs, isolation gate)
+apps/admin      Next.js store-owner admin (mobile-first; talks to the API through a same-origin cookie proxy)
+apps/storefront Next.js customer storefront (Layout V1 Fashion/Textile, guest checkout, Razorpay, Tamil/English) served on each store's host
 ```
 
 ## Run it on your laptop
@@ -21,6 +22,10 @@ npm run start:dev -w apps/api              # http://localhost:3000
 ```
 
 Stores are reached by Host: `mystore.localhost:3000` (dev), `mystore.bmstore.in` (prod), or a custom domain.
+
+Storefront: `npm run dev -w apps/storefront` (port 3002), then open the store's host, e.g. `http://mystore.localhost:3002`.
+Without Docker, `npm run dev:storage -w apps/api` gives a disk-backed object store on :9100 for product photos
+(see `apps/api/.env.example`, S3_* block) and `npx ts-node test/razorpay-fake.ts` a Razorpay double on :9200. See `PHASE3_REPORT.md`.
 
 Store admin UI: `npm run dev -w apps/admin` (port 3001), then open the store's host on that port, e.g.
 `http://mystore.localhost:3001`. The admin forwards the browser's Host to the API (`API_URL`, default `http://localhost:3000`),

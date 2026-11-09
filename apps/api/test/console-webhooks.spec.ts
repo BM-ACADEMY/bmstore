@@ -4,7 +4,7 @@ import { AddressInfo } from 'node:net';
 import { AppConfig } from '../src/config/app-config';
 import { signWebhook, WebhookService } from '../src/console/webhooks';
 import { JobsScheduler } from '../src/jobs/jobs.scheduler';
-import { JOB_NAMES, JobsService } from '../src/jobs/jobs.service';
+import { JOB_NAMES, PlatformJobsService } from '../src/jobs/platform-jobs.service';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createApp, deleteTenants, uniq } from './helpers';
 import { cleanupSuperadmin, superadminSession } from './console-helpers';
@@ -84,7 +84,7 @@ describe('outbound n8n webhooks', () => {
     expect(live.body.data.expiresAt).toBeTruthy();
 
     const t = await prisma.base.tenant.findUniqueOrThrow({ where: { id: r.store.id } });
-    await app.get(JobsService).renewalReminders(new Date(t.wentLiveAt!.getTime() + 306 * DAY));
+    await app.get(PlatformJobsService).renewalReminders(new Date(t.wentLiveAt!.getTime() + 306 * DAY));
     const ren = forStore(r.store.id).filter((x) => x.body.event === 'renewal.due');
     expect(ren).toHaveLength(1);
     expect(ren[0].body.data).toMatchObject({ planDay: 305 });

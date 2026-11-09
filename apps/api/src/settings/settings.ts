@@ -22,6 +22,9 @@ export class UpdateSettingsDto {
   @IsOptional() @IsInt() @Min(0) @Max(100_000_000) codCharge?: number;
   @IsOptional() @Matches(/^[A-Z0-9]{2,6}$/, { message: 'orderPrefix: 2-6 capital letters or digits' }) orderPrefix?: string;
   @IsOptional() @IsInt() @Min(0) @Max(100_000) lowStockThreshold?: number;
+  /** Default GST rate, basis points (500 = 5%) */
+  @IsOptional() @IsInt() @Min(0) @Max(10_000) gstRateBp?: number;
+  @IsOptional() @IsInt() @Min(5) @Max(1440) unpaidOrderTtlMin?: number;
 }
 export class UpdateThemeDto {
   @IsOptional() @IsString() @MaxLength(40) layoutVariant?: string;

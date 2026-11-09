@@ -44,6 +44,11 @@ export class ThrottleService {
     if (n !== null && n > limit) throw new TooManyRequestsException(await this.ttl(key));
   }
 
+  /** Generic fixed-window limit for other public endpoints (checkout, OTP, order lookup). 429 + Retry-After above `limit`. */
+  assertLimit(bucket: string, key: string, limit: number, windowSec: number) {
+    return this.assertUnder(`rl:${bucket}:${key}`, limit, windowSec);
+  }
+
   assertLoginIp(ip: string) {
     return this.assertUnder(`rl:login:ip:${ip}`, this.cfg.loginIpLimit, this.cfg.loginIpWindowSec);
   }

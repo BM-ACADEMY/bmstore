@@ -70,6 +70,7 @@ export default function OrderPage() {
             <a className="btn-secondary text-[#1f8f5a]" href={`https://wa.me/${phone.length === 10 ? '91' + phone : phone}?text=${encodeURIComponent(`Hi ${o.customer?.name}, about your order ${o.orderNo}: `)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
         )}
+        <a className="btn-secondary mt-3 w-full" href={`/api/store/orders/${o.id}/invoice`} download>Download GST invoice (PDF)</a>
       </Card>
 
       {o.history?.length > 0 && (

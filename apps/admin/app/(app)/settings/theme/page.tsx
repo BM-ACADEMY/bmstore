@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { api, uploadImages } from '@/lib/api';
 import { Card, ErrorBox, Field, Input, PageTitle, Select, Spinner, useLoad, useToast } from '@/components/ui';
 
+// Same vocabulary as the storefront (apps/storefront/lib/theme.ts): the id picks the full palette there, the two colours override it.
 const PALETTES = [
+  { id: 'v1-textile', name: 'Textile', primary: '#7A1F2B', secondary: '#C9973B' },
   { id: 'classic', name: 'Classic', primary: '#111827', secondary: '#6b7280' },
   { id: 'teal', name: 'Teal', primary: '#0f766e', secondary: '#c9731a' },
   { id: 'maroon', name: 'Maroon', primary: '#7f1d1d', secondary: '#b45309' },
@@ -21,7 +23,7 @@ export default function ThemePage() {
   useEffect(() => { if (data) setT(data); }, [data]);
   const save = async () => {
     setBusy(true);
-    try { await api('/store/theme', { method: 'PUT', json: { paletteId: t.paletteId, primaryColor: t.primaryColor, secondaryColor: t.secondaryColor, fontPairId: t.fontPairId, headerStyle: t.headerStyle, cardStyle: t.cardStyle, logoUrl: t.logoUrl || null } }); toast.push('Look saved'); reload(); }
+    try { await api('/store/theme', { method: 'PUT', json: { layoutVariant: t.layoutVariant, paletteId: t.paletteId, primaryColor: t.primaryColor, secondaryColor: t.secondaryColor, fontPairId: t.fontPairId, headerStyle: t.headerStyle, cardStyle: t.cardStyle, logoUrl: t.logoUrl || null } }); toast.push('Look saved'); reload(); }
     catch (e: any) { toast.push(e.message, 'bad'); } finally { setBusy(false); }
   };
   const pickLogo = async (files: FileList | null) => {
@@ -47,7 +49,7 @@ export default function ThemePage() {
       </Card>
       <Card className="flex flex-col gap-4">
         <h2 className="font-semibold">Colours</h2>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {PALETTES.map((p) => (
             <button key={p.id} type="button" onClick={() => setT({ ...t, paletteId: p.id, primaryColor: p.primary, secondaryColor: p.secondary })} className={`rounded-xl border-2 p-1.5 ${t.paletteId === p.id ? 'border-ink' : 'border-line'}`} aria-label={p.name}>
               <div className="h-10 rounded-lg" style={{ background: `linear-gradient(135deg, ${p.primary} 60%, ${p.secondary} 60%)` }} />
@@ -61,8 +63,10 @@ export default function ThemePage() {
         </div>
         <div className="rounded-xl p-4 text-white" style={{ background: t.primaryColor }}><div className="font-bold">Preview</div><div className="text-sm opacity-90">Buttons and headings use the main colour</div><span className="inline-block mt-2 rounded-lg px-3 py-1.5 text-sm font-semibold" style={{ background: t.secondaryColor }}>Buy now</span></div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Fonts"><Select value={t.fontPairId} onChange={(e) => setT({ ...t, fontPairId: e.target.value })}><option value="modern">Modern</option><option value="classic">Classic</option><option value="friendly">Friendly</option></Select></Field>
-          <Field label="Header"><Select value={t.headerStyle} onChange={(e) => setT({ ...t, headerStyle: e.target.value })}><option value="standard">Standard</option><option value="centered">Centered logo</option><option value="minimal">Minimal</option></Select></Field>
+          <Field label="Fonts"><Select value={t.fontPairId} onChange={(e) => setT({ ...t, fontPairId: e.target.value })}><option value="playfair-inter">Playfair + Inter (lookbook)</option><option value="modern">Modern (Inter)</option><option value="serif">Serif (Playfair)</option></Select></Field>
+          <Field label="Header"><Select value={t.headerStyle} onChange={(e) => setT({ ...t, headerStyle: e.target.value })}><option value="standard">Standard</option><option value="centered-logo">Centered logo</option><option value="minimal">Minimal</option></Select></Field>
+          <Field label="Corners"><Select value={t.cardStyle} onChange={(e) => setT({ ...t, cardStyle: e.target.value })}><option value="portrait">Soft (default)</option><option value="round">Round</option><option value="sharp">Sharp</option></Select></Field>
+          <Field label="Layout"><Select value={t.layoutVariant} onChange={(e) => setT({ ...t, layoutVariant: e.target.value })}><option value="v1-textile">V1 Fashion / Textile</option><option value="default">Default</option></Select></Field>
         </div>
       </Card>
       <button className="btn-primary" disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save look'}</button>

@@ -60,6 +60,21 @@ export class AppConfig {
   readonly forgotPerEmailLimit = Number(process.env.FORGOT_PER_EMAIL_LIMIT ?? 3);
   readonly forgotPerIpLimit = Number(process.env.FORGOT_PER_IP_LIMIT ?? 10);
   readonly forgotWindowSec = Number(process.env.FORGOT_WINDOW_SECONDS ?? 900);
+  // --- Storefront (src/storefront) ---
+  /** Checkout attempts per IP per window, OTP sends per phone and per IP, order lookups per IP. Redis-backed, fail open. */
+  readonly checkoutIpLimit = Number(process.env.CHECKOUT_IP_LIMIT ?? 10);
+  readonly checkoutWindowSec = Number(process.env.CHECKOUT_WINDOW_SECONDS ?? 600);
+  readonly otpPhoneLimit = Number(process.env.OTP_PHONE_LIMIT ?? 5);
+  readonly otpIpLimit = Number(process.env.OTP_IP_LIMIT ?? 20);
+  readonly otpWindowSec = Number(process.env.OTP_WINDOW_SECONDS ?? 600);
+  readonly otpTtlSec = Number(process.env.OTP_TTL_SECONDS ?? 300);
+  readonly lookupIpLimit = Number(process.env.LOOKUP_IP_LIMIT ?? 20);
+  readonly lookupWindowSec = Number(process.env.LOOKUP_WINDOW_SECONDS ?? 600);
+  /** Razorpay REST base; tests point it at an in-process double. Keys are per tenant (encrypted in tenants). */
+  readonly razorpayApiBase = (process.env.RAZORPAY_API_BASE ?? 'https://api.razorpay.com').replace(/\/$/, '');
+  /** Background jobs (unpaid-order expiry, weekly summary) inside the API process; off under test. */
+  readonly jobsEnabled = (process.env.JOBS_ENABLED ?? (process.env.NODE_ENV === 'test' ? '0' : '1')) === '1';
+  readonly jobsIntervalMs = Number(process.env.JOBS_INTERVAL_MS ?? 60_000);
   /** Subdomains that are platform hosts, never tenants. */
   readonly reservedSubdomains = new Set(['www', 'admin', 'api', 'app', 'static', 'cdn', 'mail', 'console', 'media', 'minio']);
 
@@ -68,8 +83,8 @@ export class AppConfig {
   readonly storeUrlTemplate = process.env.STORE_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3002' : 'https://{host}');
   /** Store admin URL (impersonation lands here). {host} = <subdomain>.<rootDomain>. */
   readonly adminUrlTemplate = process.env.ADMIN_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3001' : 'https://{host}/admin');
-  /** BullMQ scheduled jobs + webhook delivery worker inside the API process. Off under test. */
-  readonly jobsEnabled = (process.env.JOBS_WORKER ?? (process.env.NODE_ENV === 'test' ? '0' : '1')) === '1';
+  /** BullMQ platform jobs (chasers, renewals, expiry, backup, usage, developer summary) + webhook delivery worker. Off under test. */
+  readonly platformJobsEnabled = (process.env.JOBS_WORKER ?? (process.env.NODE_ENV === 'test' ? '0' : '1')) === '1';
   /** Outbound n8n webhook (one URL receives every event; n8n routes on `event`). Unset => events are recorded, not sent. */
   readonly n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || undefined;
   /** HMAC-SHA256 key for the X-BMStore-Signature header. */
@@ -88,6 +103,9 @@ export class AppConfig {
   /** Where infra/backup writes its state files (backup.nightly.last). */
   readonly backupStateDir = process.env.BMSTORE_STATE_DIR || '/state';
   /** Public holidays (YYYY-MM-DD, comma separated) skipped when counting working days. */
+  /** QA Lighthouse check: path to the lighthouse CLI and Chrome. Unset => the check reports "skipped". */
+  readonly lighthouseBin = process.env.LIGHTHOUSE_BIN || undefined;
+  readonly chromePath = process.env.CHROME_PATH || undefined;
   readonly holidays = new Set((process.env.WORKING_DAY_HOLIDAYS ?? '').split(',').map((s) => s.trim()).filter(Boolean));
 
   get isProd() {

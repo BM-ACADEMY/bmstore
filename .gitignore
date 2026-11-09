@@ -5,3 +5,5 @@ dist
 coverage
 dump.rdb
 *.rdb
+.dev-storage
+.next

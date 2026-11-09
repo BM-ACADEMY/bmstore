@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import request from 'supertest';
 import { AppConfig } from '../src/config/app-config';
 import { JobsScheduler, redisConnection, SCHEDULE } from '../src/jobs/jobs.scheduler';
-import { JOB_NAMES, JobsService } from '../src/jobs/jobs.service';
+import { JOB_NAMES, PlatformJobsService } from '../src/jobs/platform-jobs.service';
 import { StubNotifier } from '../src/notify/notifier';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { createApp, deleteTenants, uniq } from './helpers';
@@ -16,7 +16,7 @@ const DAY = 86_400_000;
 describe('scheduled jobs', () => {
   let app: INestApplication;
   let prisma: PrismaService;
-  let jobs: JobsService;
+  let jobs: PlatformJobsService;
   let notifier: StubNotifier;
   let s: Awaited<ReturnType<typeof superadminSession>>;
   const ids: string[] = [];
@@ -31,7 +31,7 @@ describe('scheduled jobs', () => {
   beforeAll(async () => {
     app = await createApp();
     prisma = app.get(PrismaService);
-    jobs = app.get(JobsService);
+    jobs = app.get(PlatformJobsService);
     notifier = app.get(StubNotifier);
     s = await superadminSession(app);
   });

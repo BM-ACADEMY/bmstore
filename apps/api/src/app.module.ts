@@ -21,6 +21,8 @@ import { TenancyModule } from './tenancy/tenancy.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { ConsoleModule } from './console/console.module';
 import { NotifyModule } from './notify/notify.module';
+import { StorefrontModule } from './storefront/storefront.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { JobsModule } from './jobs/jobs.module';
 
 @Global()
@@ -30,5 +32,5 @@ import { JobsModule } from './jobs/jobs.module';
 })
 class CoreModule {}
 
-@Module({ imports: [CoreModule, MailModule, NotifyModule, StorageModule, TenancyModule, AuthModule, SuperadminModule, StoreModule, UploadsModule, CatalogModule, OrdersModule, CustomersModule, CouponsModule, PagesModule, SettingsModule, ImportModule, MediaModule, LimitsModule, ConsoleModule, JobsModule], controllers: [HealthController] })
+@Module({ imports: [CoreModule, MailModule, NotifyModule, NotificationsModule, StorageModule, TenancyModule, AuthModule, SuperadminModule, StoreModule, UploadsModule, CatalogModule, OrdersModule, CustomersModule, CouponsModule, PagesModule, SettingsModule, ImportModule, MediaModule, LimitsModule, StorefrontModule, ConsoleModule, JobsModule], controllers: [HealthController] })
 export class AppModule {}

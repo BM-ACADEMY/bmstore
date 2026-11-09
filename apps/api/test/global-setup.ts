@@ -1,3 +1,5 @@
+// Test defaults FIRST: @prisma/client loads apps/api/.env when it is imported, and the defaults below use ??=.
+import './setup-env';
 import { execSync } from 'node:child_process';
 import { ensureAppRole } from '../scripts/db-app-role';
 import { startFakeS3 } from './s3-fake';

@@ -171,6 +171,9 @@ services:
       ROOT_DOMAIN: ${ROOT_DOMAIN}
       API_INTERNAL_URL: http://api:3000
       NEXT_PUBLIC_API_BASE: /api
+      # Phase 3 storefront: platform base domain for <slug>.<domain> hosts, hosts next/image may optimise from
+      PLATFORM_BASE_DOMAIN: ${ROOT_DOMAIN}
+      IMAGE_HOSTS: ${IMAGE_HOSTS:-media.${ROOT_DOMAIN}}
     depends_on:
       api:
         condition: service_healthy

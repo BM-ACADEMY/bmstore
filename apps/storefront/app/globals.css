@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/*
+ * Every colour, radius and font comes from CSS custom properties set on <html> by app/layout.tsx from the store's
+ * theme_configs row (see lib/theme.ts). Tailwind utilities below read those variables, so there is one stylesheet
+ * for every store and nothing client-specific in CSS.
+ */
+@theme inline {
+  --color-bg: var(--sf-bg);
+  --color-surface: var(--sf-surface);
+  --color-ink: var(--sf-ink);
+  --color-ink-2: var(--sf-ink-2);
+  --color-ink-3: var(--sf-ink-3);
+  --color-line: var(--sf-line);
+  --color-primary: var(--sf-primary);
+  --color-primary-text: var(--sf-primary-text);
+  --color-on-primary: var(--sf-on-primary);
+  --color-primary-soft: var(--sf-primary-soft);
+  --color-accent: var(--sf-accent);
+  --color-accent-soft: var(--sf-accent-soft);
+  --color-ok: #1f6f43;
+  --color-ok-soft: #e4f3ea;
+  --color-bad: #a3271f;
+  --color-bad-soft: #fbe7e4;
+  --font-heading: var(--sf-font-heading);
+  --font-body: var(--sf-font-body);
+  --radius-card: var(--sf-radius);
+  --radius-card-lg: var(--sf-radius-lg);
+  --shadow-card: 0 1px 2px rgb(43 27 23 / 0.06), 0 10px 30px -18px rgb(43 27 23 / 0.35);
+}
+
+html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+body { @apply bg-bg text-ink antialiased; font-family: var(--sf-font-body); font-size: 16px; line-height: 1.5; }
+h1, h2, h3, .font-heading { font-family: var(--sf-font-heading); letter-spacing: -0.01em; }
+input, select, textarea, button { font: inherit; }
+::selection { background: var(--sf-accent-soft); }
+img { color: transparent; }
+
+/* Zari border: a repeating temple-border motif in the accent (gold) colour. Decoration only, never for text. */
+@utility zari {
+  height: 10px;
+  background-color: var(--sf-accent);
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='10' viewBox='0 0 24 10'><path d='M0 9h24v1H0zM0 0h24v1H0zM12 2l5 3.5-5 3.5-5-3.5z'/></svg>");
+  mask-repeat: repeat-x;
+  mask-size: 24px 10px;
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='10' viewBox='0 0 24 10'><path d='M0 9h24v1H0zM0 0h24v1H0zM12 2l5 3.5-5 3.5-5-3.5z'/></svg>");
+  -webkit-mask-repeat: repeat-x;
+  -webkit-mask-size: 24px 10px;
+}
+@utility zari-thin {
+  height: 6px;
+  background-color: var(--sf-accent);
+  mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'><path d='M6 0l3 3-3 3-3-3z'/></svg>");
+  mask-repeat: repeat-x;
+  mask-size: 12px 6px;
+  -webkit-mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='6' viewBox='0 0 12 6'><path d='M6 0l3 3-3 3-3-3z'/></svg>");
+  -webkit-mask-repeat: repeat-x;
+  -webkit-mask-size: 12px 6px;
+}
+
+@utility tap { min-height: 3rem; }
+@utility container-x { @apply mx-auto w-full max-w-6xl px-4 sm:px-6; }
+@utility card { @apply bg-surface border border-line rounded-card shadow-card; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 tap rounded-card px-5 font-semibold select-none transition active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none; }
+@utility btn-primary { @apply btn bg-primary text-on-primary hover:brightness-110; }
+@utility btn-outline { @apply btn border border-primary text-primary-text bg-transparent hover:bg-primary-soft; }
+@utility btn-ghost { @apply btn text-primary-text hover:bg-primary-soft; }
+@utility btn-wa { @apply btn bg-[#1b7a4e] text-white hover:bg-[#166540]; }
+@utility field { @apply w-full tap rounded-card border border-line bg-surface px-4 text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary; }
+@utility label { @apply block text-sm font-medium text-ink-2 mb-1.5; }
+@utility eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-text; }
+@utility chip { @apply inline-flex items-center h-10 px-4 rounded-full border border-line bg-surface text-sm font-medium whitespace-nowrap; }
+@utility chip-on { @apply chip bg-ink text-bg border-ink; }
+@utility price-strike { @apply text-ink-3 line-through decoration-ink-3/60; }
+@utility scroll-x { @apply flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]; }
+.scroll-x::-webkit-scrollbar { display: none; }
+@utility aspect-saree { aspect-ratio: 4 / 5; }

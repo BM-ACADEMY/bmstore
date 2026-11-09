@@ -3,7 +3,7 @@ import { RequestContext } from '../common/request-context';
 import { PrismaService } from '../prisma/prisma.service';
 import { CryptoService } from './crypto.service';
 
-const aad = (tenantId: string, column: 'razorpay_key_enc' | 'razorpay_secret_enc') => `${tenantId}:${column}`;
+const aad = (tenantId: string, column: 'razorpay_key_enc' | 'razorpay_secret_enc' | 'razorpay_webhook_secret_enc') => `${tenantId}:${column}`;
 
 /** The only code that touches razorpay_*_enc. Plaintext exists only inside these methods. */
 @Injectable()
@@ -16,15 +16,23 @@ export class TenantSecretsService {
     return id;
   }
 
-  async setRazorpay(keyId: string, keySecret: string): Promise<void> {
+  async setRazorpay(keyId: string, keySecret: string, webhookSecret?: string | null): Promise<void> {
     const tid = this.tenantId();
     await this.prisma.db.tenant.update({
       where: { id: tid },
       data: {
         razorpayKeyEnc: this.crypto.encrypt(keyId, aad(tid, 'razorpay_key_enc')),
         razorpaySecretEnc: this.crypto.encrypt(keySecret, aad(tid, 'razorpay_secret_enc')),
+        ...(webhookSecret !== undefined ? { razorpayWebhookSecretEnc: webhookSecret ? this.crypto.encrypt(webhookSecret, aad(tid, 'razorpay_webhook_secret_enc')) : null } : {}),
       },
     });
+  }
+
+  /** Webhook signing secret from the tenant's Razorpay dashboard. Null until the owner sets it (webhooks are then refused). */
+  async getRazorpayWebhookSecret(): Promise<string | null> {
+    const tid = this.tenantId();
+    const t = await this.prisma.db.tenant.findUnique({ where: { id: tid }, select: { razorpayWebhookSecretEnc: true } });
+    return t?.razorpayWebhookSecretEnc ? this.crypto.decrypt(t.razorpayWebhookSecretEnc, aad(tid, 'razorpay_webhook_secret_enc')) : null;
   }
 
   /** For the payments module (Phase 2). Never return this from a controller. */
