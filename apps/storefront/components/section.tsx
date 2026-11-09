@@ -7,7 +7,7 @@ export function SectionHeading({ eyebrow, title, href, hrefLabel, center = false
         {eyebrow && <div className="eyebrow mb-1.5">{eyebrow}</div>}
         <h2 className="font-heading text-2xl sm:text-3xl text-ink">{title}</h2>
       </div>
-      {href && <Link href={href} className="text-sm font-semibold text-primary-text underline-offset-4 hover:underline whitespace-nowrap">{hrefLabel}</Link>}
+      {href && <Link href={href} className="inline-flex items-center min-h-11 -my-3 px-1 -mr-1 text-sm font-semibold text-primary-text underline-offset-4 hover:underline whitespace-nowrap">{hrefLabel}</Link>}
     </div>
   );
 }

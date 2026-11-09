@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Filters } from '@/components/filters';
-import { cardLabels } from '@/components/labels';
 import { Pagination } from '@/components/pagination';
-import { ProductCard, ProductGrid } from '@/components/product-card';
+import { Products } from '@/components/product-grid';
 import { fetchListing, listingQuery, Search } from '@/lib/server/listing';
 import { getBootstrap, getT } from '@/lib/server/store';
+import { pickLang } from '@/lib/i18n';
 
 type Params = { slug: string };
 
@@ -21,25 +21,28 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function CategoryPage({ params, searchParams }: { params: Promise<Params>; searchParams: Promise<Search> }) {
   const { slug } = await params;
   const sp = await searchParams;
-  const [{ t }, boot] = await Promise.all([getT(), getBootstrap()]);
+  const [{ t, lang }, boot] = await Promise.all([getT(), getBootstrap()]);
   const listing = await fetchListing(sp, slug === 'all' ? {} : { category: slug });
-  const labels = cardLabels(t);
-  const title = slug === 'all' ? t('category.all') : listing.category?.name ?? t('category.all');
+  const title = slug === 'all' ? t('category.all') : pickLang(lang, listing.category?.name, listing.category?.nameTa) ?? t('category.all');
   const parent = listing.category?.parentId ? boot.categories.find((c) => c.id === listing.category!.parentId) : null;
   const href = (page: number) => { const p = listingQuery(sp); p.set('page', String(page)); return `/c/${slug}?${p}`; };
   const crumbs = [{ name: t('nav.home'), item: '/' }, ...(parent ? [{ name: parent.name, item: `/c/${parent.slug}` }] : []), { name: title, item: `/c/${slug}` }];
   return (
     <div className="container-x pt-6 pb-10 lg:pl-72">
-      <nav aria-label="Breadcrumb" className="text-xs text-ink-3 mb-3 flex gap-1.5 flex-wrap">
-        {crumbs.map((c, i) => <span key={c.item} className="flex gap-1.5">{i > 0 && <span>/</span>}{i < crumbs.length - 1 ? <Link href={c.item} className="hover:text-primary-text">{c.name}</Link> : <span className="text-ink-2">{c.name}</span>}</span>)}
+      <nav aria-label="Breadcrumb" className="text-xs text-ink-3 mb-1 flex items-center gap-1.5 flex-wrap">
+        {crumbs.map((c, i) => <span key={c.item} className="flex items-center gap-1.5">{i > 0 && <span>/</span>}{i < crumbs.length - 1 ? <Link href={c.item} className="inline-flex items-center justify-center min-h-11 min-w-11 px-1 -mx-1 hover:text-primary-text">{c.name}</Link> : <span className="text-ink-2">{c.name}</span>}</span>)}
       </nav>
-      <h1 className="font-heading text-3xl sm:text-4xl">{title}</h1>
+      {boot.layout === 'v3-retail' ? (
+        <div className="text-center py-2"><div className="mx-auto h-px w-10 bg-accent mb-3" aria-hidden /><h1 className="font-heading text-4xl sm:text-5xl">{title}</h1><p className="mt-1 text-sm text-ink-3">{t('category.results', { count: listing.total })}</p></div>
+      ) : (
+        <h1 className={`font-heading ${boot.layout === 'v2-grocer' ? 'text-[1.75rem] sm:text-4xl font-semibold' : 'text-3xl sm:text-4xl'}`}>{title}</h1>
+      )}
       {listing.children.length > 0 && (
-        <div className="scroll-x mt-4">{listing.children.map((c) => <Link key={c.id} href={`/c/${c.slug}`} className="chip shrink-0">{c.name}</Link>)}</div>
+        <div className="scroll-x mt-4">{listing.children.map((c) => <Link key={c.id} href={`/c/${c.slug}`} className="chip shrink-0">{pickLang(lang, c.name, c.nameTa)}</Link>)}</div>
       )}
       <div className="mt-5 mb-6"><Filters facets={listing.facets} total={listing.total} /></div>
       {listing.items.length ? (
-        <ProductGrid>{listing.items.map((p, i) => <ProductCard key={p.id} p={p} priority={i < 2} labels={labels} />)}</ProductGrid>
+        <Products items={listing.items} priorityCount={2} />
       ) : (
         <div className="card p-10 text-center text-ink-2">{t('category.noResults')} <Link href={`/c/${slug}`} className="text-primary-text font-semibold underline underline-offset-4">{t('category.clear')}</Link></div>
       )}

@@ -1,5 +1,5 @@
 import { BadRequestException, Body, ConflictException, Controller, Delete, Get, HttpCode, Injectable, NotFoundException, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsUUID, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import { Roles } from '../auth/decorators';
 import { RequestContext } from '../common/request-context';
 import { slugify, uniqueSlug } from '../common/slug';
@@ -8,12 +8,14 @@ import { assertOwnMediaUrls } from './media-url';
 
 export class CreateCategoryDto {
   @IsString() @MinLength(1) @MaxLength(80) name!: string;
+  @ValidateIf((o) => o.nameTa !== null) @IsOptional() @IsString() @MaxLength(80) nameTa?: string | null;
   @IsOptional() @IsString() @MinLength(1) @MaxLength(80) slug?: string;
   @IsOptional() @IsUUID() parentId?: string | null;
   @IsOptional() @IsString() @MaxLength(500) image?: string | null;
 }
 export class UpdateCategoryDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(80) name?: string;
+  @ValidateIf((o) => o.nameTa !== null) @IsOptional() @IsString() @MaxLength(80) nameTa?: string | null;
   @IsOptional() @IsString() @MinLength(1) @MaxLength(80) slug?: string;
   @IsOptional() @IsUUID() parentId?: string | null;
   @IsOptional() @IsString() @MaxLength(500) image?: string | null;
@@ -64,7 +66,7 @@ export class CategoriesService {
   async create(dto: CreateCategoryDto) {
     if (dto.image) assertOwnMediaUrls(RequestContext.tenantId()!, [dto.image]);
     if ((await this.depthOf(dto.parentId)) >= MAX_DEPTH) throw new BadRequestException(`Categories can be nested at most ${MAX_DEPTH} levels deep`);
-    return this.db.category.create({ data: { tenantId: RequestContext.tenantId()!, name: dto.name, slug: await this.slugFor(dto.name, dto.slug), parentId: dto.parentId ?? null, image: dto.image ?? null } });
+    return this.db.category.create({ data: { tenantId: RequestContext.tenantId()!, name: dto.name, nameTa: dto.nameTa?.trim() || null, slug: await this.slugFor(dto.name, dto.slug), parentId: dto.parentId ?? null, image: dto.image ?? null } });
   }
 
   async update(id: string, dto: UpdateCategoryDto) {

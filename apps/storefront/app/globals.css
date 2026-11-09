@@ -17,7 +17,12 @@
   --color-on-primary: var(--sf-on-primary);
   --color-primary-soft: var(--sf-primary-soft);
   --color-accent: var(--sf-accent);
+  --color-accent-text: var(--sf-accent-text);
+  --color-on-accent: var(--sf-on-accent);
   --color-accent-soft: var(--sf-accent-soft);
+  --color-tertiary: var(--sf-tertiary);
+  --color-tertiary-soft: var(--sf-tertiary-soft);
+  --color-primary-deep: var(--sf-primary-deep);
   --color-ok: #1f6f43;
   --color-ok-soft: #e4f3ea;
   --color-bad: #a3271f;
@@ -26,11 +31,12 @@
   --font-body: var(--sf-font-body);
   --radius-card: var(--sf-radius);
   --radius-card-lg: var(--sf-radius-lg);
+  --radius-pill: var(--sf-radius-pill);
   --shadow-card: 0 1px 2px rgb(43 27 23 / 0.06), 0 10px 30px -18px rgb(43 27 23 / 0.35);
 }
 
 html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
-body { @apply bg-bg text-ink antialiased; font-family: var(--sf-font-body); font-size: 16px; line-height: 1.5; }
+body { @apply bg-bg text-ink antialiased; font-family: var(--sf-font-body); font-size: 16px; line-height: 1.5; overflow-wrap: anywhere; } /* long Tamil words wrap instead of overflowing narrow tiles (anywhere: also shrinks flex min-content) */
 h1, h2, h3, .font-heading { font-family: var(--sf-font-heading); letter-spacing: -0.01em; }
 input, select, textarea, button { font: inherit; }
 ::selection { background: var(--sf-accent-soft); }
@@ -69,9 +75,21 @@ img { color: transparent; }
 @utility field { @apply w-full tap rounded-card border border-line bg-surface px-4 text-ink placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary; }
 @utility label { @apply block text-sm font-medium text-ink-2 mb-1.5; }
 @utility eyebrow { @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-text; }
-@utility chip { @apply inline-flex items-center h-10 px-4 rounded-full border border-line bg-surface text-sm font-medium whitespace-nowrap; }
+@utility chip { @apply inline-flex items-center h-11 px-4 rounded-pill border border-line bg-surface text-sm font-medium whitespace-nowrap; }
 @utility chip-on { @apply chip bg-ink text-bg border-ink; }
 @utility price-strike { @apply text-ink-3 line-through decoration-ink-3/60; }
 @utility scroll-x { @apply flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]; }
 .scroll-x::-webkit-scrollbar { display: none; }
 @utility aspect-saree { aspect-ratio: 4 / 5; }
+
+/*
+ * Self-hosted Tamil-capable faces for the theme font pairs (public/fonts, SIL OFL). Declared here rather than through
+ * next/font so a family can carry two unicode-range subsets (Tamil + Latin) under one name. Inter, Playfair Display and
+ * Noto Sans Tamil stay on next/font/local (app/layout.tsx).
+ */
+@font-face { font-family: "Baloo Thambi 2"; font-style: normal; font-weight: 400 800; font-display: swap; src: url("/fonts/BalooThambi2-Tamil.woff2") format("woff2"); unicode-range: U+0964-0965, U+0B82-0BFA, U+200C-200D, U+20B9, U+25CC; }
+@font-face { font-family: "Baloo Thambi 2"; font-style: normal; font-weight: 400 800; font-display: swap; src: url("/fonts/BalooThambi2-Latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Cormorant Garamond"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("/fonts/CormorantGaramond.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Cormorant Garamond"; font-style: italic; font-weight: 400 700; font-display: swap; src: url("/fonts/CormorantGaramond-Italic.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Noto Serif Tamil"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("/fonts/NotoSerifTamil-Tamil.woff2") format("woff2"); unicode-range: U+0964-0965, U+0B82-0BFA, U+200C-200D, U+20B9, U+25CC; }
+@font-face { font-family: "Noto Serif Tamil"; font-style: normal; font-weight: 400 700; font-display: swap; src: url("/fonts/NotoSerifTamil-Latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }

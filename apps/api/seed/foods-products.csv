@@ -1,0 +1,27 @@
+name,description,price,mrp,sku,stock,category,hsn_code,image_filename
+Ponni Boiled Rice,Aged Thanjavur ponni. Fluffy and separate grains for everyday meals. Base pack 1 kg.,68.00,75.00,RIC-001,120,Rice & Grains,1006,rice-ponni.jpg
+Seeraga Samba Rice,Tiny aromatic grain for biryani and ghee rice. Base pack 1 kg.,145.00,160.00,RIC-002,40,Rice & Grains,1006,rice-seeraga.jpg
+Idli Rice,Parboiled short grain that grinds to a soft batter. Base pack 1 kg.,58.00,62.00,RIC-003,80,Rice & Grains,1006,rice-idli.jpg
+Red Rice (Sivappu Arisi),Unpolished red rice with the bran kept on. Nutty and filling. Base pack 1 kg.,95.00,110.00,RIC-004,3,Rice & Grains,1006,rice-red.jpg
+Whole Wheat (Godhumai),Cleaned whole wheat for chapati flour and kozhukattai. Base pack 1 kg.,52.00,58.00,RIC-005,60,Rice & Grains,1001,wheat.jpg
+Toor Dal,Unpolished toor dal that cooks soft for sambar. Base pack 500 g.,82.00,95.00,DAL-001,70,Pulses,0713,dal-toor.jpg
+Urad Dal (Whole White),Skinned whole urad for idli and vada batter. Base pack 500 g.,78.00,88.00,DAL-002,45,Pulses,0713,dal-urad.jpg
+Moong Dal,Split yellow moong for pongal and kootu. Base pack 500 g.,70.00,80.00,DAL-003,2,Pulses,0713,dal-moong.jpg
+Chana Dal,Bengal gram for sundal and paruppu usili. Base pack 500 g.,64.00,72.00,DAL-004,55,Pulses,0713,dal-chana.jpg
+Turmeric Powder (Erode),Erode manjal ground fresh every week. Base pack 250 g.,95.00,110.00,SPI-001,90,Spices,0910,spice-turmeric.jpg
+Red Chilli Powder (Guntur),Medium-hot Guntur chilli. Base pack 250 g.,88.00,99.00,SPI-002,65,Spices,0904,spice-chilli.jpg
+Sambar Powder,Our family recipe: coriander · chilli · toor dal · fenugreek. Base pack 250 g.,120.00,135.00,SPI-003,30,Spices,0910,spice-sambar.jpg
+Rasam Powder,Pepper-cumin forward. Base pack 250 g.,110.00,125.00,SPI-004,4,Spices,0910,spice-rasam.jpg
+Black Pepper (Wayanad),Bold whole peppercorns. Base pack 250 g.,240.00,260.00,SPI-005,25,Spices,0904,spice-pepper.jpg
+Mustard Seeds,Small black mustard for tempering. Base pack 250 g.,38.00,42.00,SPI-006,0,Spices,1207,spice-mustard.jpg
+Cold-pressed Gingelly Oil,Chekku nallennai from white sesame. Base pack 500 ml.,210.00,230.00,OIL-001,28,Oils & Ghee,1515,oil-gingelly.jpg
+Cold-pressed Groundnut Oil,Chekku kadalai ennai. Base pack 500 ml.,165.00,180.00,OIL-002,35,Oils & Ghee,1508,oil-groundnut.jpg
+Cow Ghee,Slow-cooked from cultured butter. Base pack 250 ml.,260.00,290.00,OIL-003,18,Oils & Ghee,0405,ghee.jpg
+Coconut Oil,Pure copra oil for cooking and hair. Base pack 500 ml.,140.00,155.00,OIL-004,5,Oils & Ghee,1513,oil-coconut.jpg
+Butter Murukku,Crisp rice-flour spirals with a buttery crunch. Base pack 250 g.,85.00,95.00,SNK-001,40,Snacks,2106,snack-murukku.jpg
+Madras Mixture,Boondi · sev · peanuts · curry leaves. Base pack 250 g.,75.00,85.00,SNK-002,50,Snacks,2106,snack-mixture.jpg
+Thattai,Thin spicy rice crackers. Base pack 250 g.,80.00,90.00,SNK-003,22,Snacks,2106,snack-thattai.jpg
+Adhirasam,Jaggery and rice-flour sweet. Pack of 6.,120.00,130.00,SNK-004,12,Snacks,2106,snack-adhirasam.jpg
+Idiyappam Flour,Roasted rice flour for string hoppers. Base pack 500 g.,60.00,68.00,FLR-001,30,Flours,1102,flour-idiyappam.jpg
+Ragi Flour,Sprouted finger millet flour. Base pack 500 g.,72.00,80.00,FLR-002,26,Flours,1102,flour-ragi.jpg
+Rice Flour,Fine rice flour for murukku and kozhukattai. Base pack 500 g.,48.00,55.00,FLR-003,44,Flours,1102,flour-rice.jpg

@@ -1,7 +1,8 @@
 import { BadRequestException, Body, Controller, Get, Injectable, Module, Patch, Put } from '@nestjs/common';
 import { Prisma, ShippingMode } from '@prisma/client';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsBoolean, IsEnum, IsHexColor, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateIf, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsEnum, IsHexColor, IsInt, IsObject, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateIf, ValidateNested } from 'class-validator';
+import { normalizeTheme, presentTheme, themeVocabulary } from '../theme/theme-config';
 import { Roles } from '../auth/decorators';
 import { RequestContext } from '../common/request-context';
 import { assertOwnMediaUrls } from '../catalog/media-url';
@@ -26,6 +27,7 @@ export class UpdateSettingsDto {
   @IsOptional() @IsInt() @Min(0) @Max(10_000) gstRateBp?: number;
   @IsOptional() @IsInt() @Min(5) @Max(1440) unpaidOrderTtlMin?: number;
 }
+/** Shape only; the vocabulary (allowed ids, section schema, options) is checked by src/theme/theme-config.ts. */
 export class UpdateThemeDto {
   @IsOptional() @IsString() @MaxLength(40) layoutVariant?: string;
   @IsOptional() @IsString() @MaxLength(40) paletteId?: string;
@@ -34,9 +36,11 @@ export class UpdateThemeDto {
   @IsOptional() @IsString() @MaxLength(40) fontPairId?: string;
   @IsOptional() @IsString() @MaxLength(40) headerStyle?: string;
   @IsOptional() @IsString() @MaxLength(40) cardStyle?: string;
+  @IsOptional() @IsString() @MaxLength(40) heroType?: string;
   @ValidateIf((o) => o.logoUrl !== null) @IsOptional() @IsString() @MaxLength(500) logoUrl?: string | null;
   @IsOptional() @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) @MaxLength(500, { each: true }) bannerUrls?: string[];
   @IsOptional() @IsArray() @ArrayMaxSize(30) homepageSections?: unknown[];
+  @IsOptional() @IsObject() options?: Record<string, unknown>;
 }
 /** The store's own profile: the columns a tenant may edit about itself (plan/status/domains are superadmin-only). */
 export class UpdateProfileDto {
@@ -76,14 +80,21 @@ export class SettingsService {
     return this.db.settings.upsert({ where: { tenantId: this.tid() }, create: { ...(data as Prisma.SettingsUncheckedCreateInput), tenantId: this.tid() }, update: data });
   }
 
-  getTheme() {
-    return this.db.themeConfig.upsert({ where: { tenantId: this.tid() }, create: { tenantId: this.tid() }, update: {} });
+  /** The row, normalised to the current vocabulary (legacy ids mapped, every section present). */
+  async getTheme() {
+    const row = await this.db.themeConfig.upsert({ where: { tenantId: this.tid() }, create: { tenantId: this.tid() }, update: {} });
+    return { ...presentTheme(row), updatedAt: new Date().toISOString() };
   }
-  updateTheme(dto: UpdateThemeDto) {
-    assertOwnMediaUrls(this.tid(), [...(dto.logoUrl ? [dto.logoUrl] : []), ...(dto.bannerUrls ?? [])]);
-    const { homepageSections, ...rest } = dto;
-    const data: Prisma.ThemeConfigUpdateInput = { ...rest, ...(homepageSections ? { homepageSections: homepageSections as Prisma.InputJsonValue } : {}) };
-    return this.db.themeConfig.upsert({ where: { tenantId: this.tid() }, create: { ...(data as Prisma.ThemeConfigUncheckedCreateInput), tenantId: this.tid() }, update: data });
+  /** Partial update: unspecified fields keep their stored value; the whole result must validate (400 lists every problem). */
+  async updateTheme(dto: UpdateThemeDto) {
+    const aboutImages = (dto.homepageSections ?? []).map((s: any) => s?.imageUrl).filter((u): u is string => typeof u === 'string' && u.length > 0);
+    assertOwnMediaUrls(this.tid(), [...(dto.logoUrl ? [dto.logoUrl] : []), ...(dto.bannerUrls ?? []), ...aboutImages]);
+    const current = await this.db.themeConfig.findUnique({ where: { tenantId: this.tid() } });
+    // aliases (console layouts, legacy ids) are stored as written; reads map them to the canonical layout
+    const theme = normalizeTheme(dto, current ? presentTheme(current) : null, { canonical: false });
+    const data: Prisma.ThemeConfigUncheckedCreateInput = { ...theme, tenantId: this.tid(), homepageSections: theme.homepageSections as unknown as Prisma.InputJsonValue, options: theme.options as unknown as Prisma.InputJsonValue };
+    const row = await this.db.themeConfig.upsert({ where: { tenantId: this.tid() }, create: data, update: data });
+    return presentTheme(row);
   }
 
   async getProfile() {
@@ -105,6 +116,7 @@ export class SettingsController {
   @Roles('store_owner', 'staff') @Get('settings') getSettings() { return this.settings.getSettings(); }
   @Roles('store_owner') @Put('settings') updateSettings(@Body() dto: UpdateSettingsDto) { return this.settings.updateSettings(dto); }
   @Roles('store_owner', 'staff') @Get('theme') getTheme() { return this.settings.getTheme(); }
+  @Roles('store_owner', 'staff') @Get('theme/vocabulary') themeVocabulary() { return themeVocabulary(); }
   @Roles('store_owner') @Put('theme') updateTheme(@Body() dto: UpdateThemeDto) { return this.settings.updateTheme(dto); }
   @Roles('store_owner', 'staff') @Get('profile') getProfile() { return this.settings.getProfile(); }
   @Roles('store_owner') @Patch('profile') updateProfile(@Body() dto: UpdateProfileDto) { return this.settings.updateProfile(dto); }

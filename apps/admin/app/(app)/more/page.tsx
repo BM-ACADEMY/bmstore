@@ -11,7 +11,8 @@ const ITEMS = [
   { href: '/coupons', label: 'Coupons', hint: 'Discount codes' },
   { href: '/pages', label: 'Pages', hint: 'About, policies, contact' },
   { href: '/settings', label: 'Settings', hint: 'Shipping, COD, store details' },
-  { href: '/settings/theme', label: 'Look & logo', hint: 'Colours and branding' },
+  { href: '/settings/theme', label: 'Look & layout', hint: 'Layout, colours, fonts, home page' },
+  { href: '/categories', label: 'Categories', hint: 'Tamil labels for tiles and menus' },
 ];
 
 export default function MorePage() {

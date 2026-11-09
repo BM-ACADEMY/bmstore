@@ -34,7 +34,7 @@ export default function SettingsPage() {
   const u = usage.data;
   return (
     <div className="flex flex-col gap-4">
-      <PageTitle title="Settings" action={<Link href="/settings/theme" className="btn-secondary">Look &amp; logo</Link>} />
+      <PageTitle title="Settings" action={<Link href="/settings/theme" className="btn-secondary">Look &amp; layout</Link>} />
 
       <Card className="flex flex-col gap-4">
         <h2 className="font-semibold text-lg">Shipping</h2>

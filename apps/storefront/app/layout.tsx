@@ -4,7 +4,10 @@ import { headers } from 'next/headers';
 import type { ReactNode } from 'react';
 import { Footer } from '@/components/footer';
 import { Header } from '@/components/header';
+import { MiniCartBar } from '@/components/mini-cart-bar';
 import { PreviewRibbon } from '@/components/preview-ribbon';
+import { ThemePreviewBridge } from '@/components/theme-preview-bridge';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { UnavailableContent } from '@/components/unavailable';
 import { CartProvider } from '@/lib/cart';
 import { StoreApiError, storeHost } from '@/lib/server/api';
@@ -59,25 +62,28 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     );
   }
   const preview = boot.store.status === 'BUILDING';
-  const vars = themeVars(boot.theme) as React.CSSProperties;
+  const vars = themeVars(boot.theme);
   const org = {
     '@context': 'https://schema.org', '@type': 'Organization', name: boot.store.name, url: await absoluteUrl('/'),
-    ...(boot.theme?.logoUrl ? { logo: boot.theme.logoUrl } : {}), ...(boot.store.supportPhone ? { telephone: boot.store.supportPhone } : {}),
+    ...(boot.theme.logoUrl ? { logo: boot.theme.logoUrl } : {}), ...(boot.store.supportPhone ? { telephone: boot.store.supportPhone } : {}),
     ...(boot.store.address ? { address: { '@type': 'PostalAddress', streetAddress: boot.store.address, addressCountry: 'IN' } } : {}),
   };
   return (
-    <html lang={lang} className={fontClass} style={vars}>
+    <html lang={lang} className={fontClass} style={vars as React.CSSProperties} data-layout={boot.layout} data-cards={boot.theme.cardStyle}>
       <head>
-        <meta name="theme-color" content={(vars as any)['--sf-bg']} />
+        <meta name="theme-color" content={vars['--sf-bg']} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(org) }} />
       </head>
-      <body>
-        <StoreProvider value={{ store: boot.store, settings: boot.settings, payments: boot.payments, lang, messages, host }}>
+      <body className={boot.layout === 'v2-grocer' ? 'pb-20 lg:pb-0' : ''}>
+        <StoreProvider value={{ store: boot.store, settings: boot.settings, payments: boot.payments, lang, messages, host, theme: boot.theme, previewing: boot.previewing }}>
           <CartProvider>
             {preview && <PreviewRibbon label={t('preview.ribbon')} />}
-            <Header categories={boot.categories} logoUrl={boot.theme?.logoUrl ?? null} pages={boot.pages.filter((p) => p.isPolicy)} />
+            <Header categories={boot.categories} pages={boot.pages.filter((p) => p.isPolicy)} />
             <main className="min-h-[60dvh]">{children}</main>
             <Footer boot={boot} t={t} />
+            {boot.layout === 'v2-grocer' && <MiniCartBar />}
+            {boot.theme.options.switcherEnabled && <ThemeSwitcher />}
+            <ThemePreviewBridge />
           </CartProvider>
         </StoreProvider>
       </body>

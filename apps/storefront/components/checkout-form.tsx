@@ -8,6 +8,7 @@ import { rupees } from '@/lib/money';
 import { payWithRazorpay } from '@/lib/razorpay';
 import { STATES } from '@/lib/states';
 import { useStore, useT } from '@/lib/store-context';
+import { couponKey } from './cart-view';
 import { CheckIcon } from './icons';
 
 interface Quote { items: Array<{ productId: string; variantId: string | null; name: string; qty: number; unitPrice: number; total: number; available: boolean }>; subtotal: number; discount: number; shipping: number; shippingReason: string; codCharge: number; tax: number; total: number; coupon: { code: string } | null; payments: { cod: boolean; online: boolean } }
@@ -34,7 +35,7 @@ export function CheckoutForm() {
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const items = useMemo(() => cart.lines.map((l) => ({ productId: l.productId, variantId: l.variantId, qty: l.qty })), [cart.lines]);
 
-  useEffect(() => { try { const d = localStorage.getItem(DRAFT); if (d) setF((cur) => ({ ...cur, ...JSON.parse(d) })); } catch { /* ignore */ } }, []);
+  useEffect(() => { try { const d = localStorage.getItem(DRAFT); if (d) setF((cur) => ({ ...cur, ...JSON.parse(d) })); const c = localStorage.getItem(couponKey(store.slug)); if (c) { setCoupon(c); setCouponInput(c); } } catch { /* ignore */ } }, [store.slug]);
   useEffect(() => { try { const { note, ...keep } = f; localStorage.setItem(DRAFT, JSON.stringify(keep)); } catch { /* ignore */ } }, [f]);
   useEffect(() => { if (cart.ready && !cart.lines.length && !busy) router.replace('/cart'); }, [cart.ready, cart.lines.length, busy, router]);
 
@@ -101,7 +102,7 @@ export function CheckoutForm() {
         }
       }
       cart.clear();
-      try { localStorage.removeItem(DRAFT); } catch { /* ignore */ }
+      try { localStorage.removeItem(DRAFT); localStorage.removeItem(couponKey(store.slug)); } catch { /* ignore */ }
       router.push(`/order/${encodeURIComponent(placed.orderNo)}?t=${placed.token}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t('error.generic'));
