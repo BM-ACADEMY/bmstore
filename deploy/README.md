@@ -2,7 +2,7 @@
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.prod.yml` | The production stack (profiles: `minio`, `web`, `tools`) |
+| `docker-compose.prod.yml` | The production stack (profiles: `minio` (= RustFS), `web`, `tools`) |
 | `compose.sh` | Wrapper: `docker compose` with the env file `/etc/bmstore/production.env`, repo root, current image tag |
 | `deploy.sh` | pull → build → pre-deploy dump → migrate (owner) → app-role grants → switch → health → rollback on failure |
 | `server-setup.sh` | One-time Ubuntu bootstrap: Docker, deploy user, SSH keys-only, ufw, fail2ban, auto-updates, swap |

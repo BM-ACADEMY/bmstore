@@ -180,10 +180,10 @@ log "step 2: build images"
 IMAGE_TAG="$NEW_TAG" run "$COMPOSE" --profile tools build --pull $(build_services)
 
 log "step 2b: data services up"
-svcs="postgres redis"; compose_profiles_have minio && svcs="$svcs minio"
+svcs="postgres redis"; compose_profiles_have minio && svcs="$svcs rustfs"
 # shellcheck disable=SC2086
 IMAGE_TAG="$NEW_TAG" run "$COMPOSE" up -d --wait --wait-timeout 120 $svcs
-compose_profiles_have minio && IMAGE_TAG="$NEW_TAG" run "$COMPOSE" run --rm -T minio-init
+compose_profiles_have minio && IMAGE_TAG="$NEW_TAG" run "$COMPOSE" run --rm -T rustfs-init
 
 if (( DO_BACKUP )); then
   log "step 3: pre-deploy database dump"

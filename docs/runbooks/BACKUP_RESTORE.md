@@ -69,7 +69,7 @@ Afterwards: `./deploy/compose.sh exec postgres psql -U bmstore -c 'DROP DATABASE
 1. GO_LIVE.md steps 5–8 on the new VPS (same `ENCRYPTION_KEY`, same `BACKUP_S3_*`, same DB passwords).
 2. `./deploy/deploy.sh --no-pull --no-backup` to create the empty stack (migrations create the schema).
 3. 3b steps 1, 3 (`--yes`), 4, 5 using the newest nightly or weekly dump.
-4. Media: MinIO → `./deploy/compose.sh run --rm backup shell` then
+4. Media: bundled RustFS → `./deploy/compose.sh run --rm backup shell` then
    `rclone sync bk:$BACKUP_S3_BUCKET/media/current media:$S3_BUCKET` (remotes are pre-configured from env in the
    shell via `source lib.sh; setup_remote; setup_media_remote`). External S3/R2 media needs nothing.
 5. Point DNS at the new IP (DNS.md §4). Certificates re-issue on demand.
