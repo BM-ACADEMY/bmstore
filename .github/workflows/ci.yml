@@ -114,3 +114,5 @@ jobs:
       - name: Storefront typecheck, theme tests and build
         run: npm run typecheck && npm test && npm run build
         working-directory: apps/storefront
+      - name: Developer console typecheck and build
+        run: npm run typecheck -w apps/console && npm run build -w apps/console

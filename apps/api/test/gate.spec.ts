@@ -32,7 +32,7 @@ const lc = (m: string) => m[0].toLowerCase() + m.slice(1);
 const modelDef = (m: string) => DMMF_MODELS.find((x) => x.name === m)!;
 const pkField = (m: string) => modelDef(m).fields.find((f) => f.isId)!.name; // 'id' or 'tenantId'
 const hasField = (m: string, f: string) => modelDef(m).fields.some((x) => x.name === f);
-const SINGLE_ROW = new Set(['Tenant', 'ThemeConfig', 'Settings', 'TenantUsage']); // exactly one row per tenant
+const SINGLE_ROW = new Set(['Tenant', 'ThemeConfig', 'Settings', 'TenantUsage', 'StoreIntake', 'StoreDomain']); // exactly one row per tenant
 const rnd = () => randomBytes(4).toString('hex');
 
 async function rejection(p: Promise<any>): Promise<any> {
@@ -64,12 +64,17 @@ const factories: Record<string, (db: any, s: Seed, i: number, over?: Row) => Pro
   AuditLog: (db, _s, i, o) => db.auditLog.create({ data: { action: `gate.seed.${i}`, meta: { i }, ...o } }),
   Payment: (db, s, i, o) => db.payment.create({ data: { orderId: s.Order[i % s.Order.length].id, providerOrderId: `order_${rnd()}${i}`, amount: 12, ...o } }),
   WebhookEvent: (db, _s, i, o) => db.webhookEvent.create({ data: { eventId: `evt_${rnd()}${i}`, event: 'payment.captured', ...o } }),
+  StoreIntake: (db, _s, i, o) => db.storeIntake.create({ data: { intakeKey: `gate-${i}-${rnd()}`, businessName: `Gate biz ${i}`, brandColors: ['#111111'], shipping: { mode: 'FLAT' }, ...o } }),
+  StoreDomain: (db, _s, i, o) => db.storeDomain.create({ data: { domain: `d${i}-${rnd()}.gate-shop.in`, dnsSeen: ['CNAME x'], ...o } }),
+  QaRun: (db, _s, i, o) => db.qaRun.create({ data: { passed: i % 2 === 0, results: [{ id: 'policy_pages', status: 'pass' }], ...o } }),
+  RefundCase: (db, _s, i, o) => db.refundCase.create({ data: { reason: 'not_delivered', amountPaidPaise: 1180000, gstPaise: 180000, eligible: i === 0, decision: { rule: 'gate' }, creditNoteNo: `CN/GATE/${rnd()}${i}`, ...o } }),
+  OutboxEvent: (db, _s, i, o) => db.outboxEvent.create({ data: { kind: 'notice', event: 'gate.test', dedupeKey: `gate-${i}-${rnd()}`, payload: { i }, ...o } }),
   Media: (db, _s, i, o) => db.media.create({ data: { kind: 'product', filename: `img-${i}.jpg`, contentType: 'image/jpeg', originalKey: `tenants/x/originals/${rnd()}.jpg`, declaredBytes: 10, ...o } }),
 };
 /** Run a factory against a recorder instead of the DB to obtain the exact create-data it would send. */
 const recorder: any = new Proxy({}, { get: () => ({ create: ({ data }: Row) => ({ __data: data }) }) });
 const dataFor = async (m: string, s: Seed, i: number, over: Row = {}): Promise<Row> => ((await factories[m](recorder, s, i, over)) as any).__data;
-const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Payment', 'WebhookEvent', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media'];
+const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Payment', 'WebhookEvent', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media', 'StoreIntake', 'StoreDomain', 'QaRun', 'RefundCase', 'OutboxEvent'];
 
 // ---- per-model attack metadata ----
 interface Meta {
@@ -119,6 +124,11 @@ const META: Record<string, Meta> = {
   },
   AuditLog: { touch: { action: 'touched' }, updateBlocked: true, deleteBlocked: true },
   Media: { touch: { error: 'touched' } },
+  StoreIntake: { touch: { category: 'touched' }, compound: (r) => ({ intakeKey: r.intakeKey }) },
+  StoreDomain: { touch: { sslDetail: 'touched' }, compound: (r) => ({ domain: r.domain }) },
+  QaRun: { touch: { passed: false } },
+  RefundCase: { touch: { note: 'touched' }, compound: (r) => ({ creditNoteNo: r.creditNoteNo }) },
+  OutboxEvent: { touch: { status: 'touched' }, compound: (r) => ({ tenantId_dedupeKey: { tenantId: r.tenantId, dedupeKey: r.dedupeKey } }) },
 };
 
 describe('GATE: tenant isolation across every model', () => {
@@ -188,7 +198,7 @@ describe('GATE: tenant isolation across every model', () => {
         expect(factories[m]).toBeDefined();
         for (const k of ['A', 'B'] as const) expect(seeded[k][m].length).toBeGreaterThan(0);
       }
-      expect(MODELS).toHaveLength(18);
+      expect(MODELS).toHaveLength(23);
     });
     it('money is integer paise everywhere: no Float/Decimal field in any model', () => {
       for (const m of DMMF_MODELS) for (const f of m.fields) expect(`${m.name}.${f.name}:${f.type}`).not.toMatch(/:(Float|Decimal)$/);
@@ -466,8 +476,9 @@ describe('GATE: tenant isolation across every model', () => {
         for (const k of ['A', 'B'] as const) for (const r of seeded[k][m]) expect(ids.has(r[pkField(m)])).toBe(true);
       }
       const last = await base.auditLog.findFirst({ where: { actorId: actor.id }, orderBy: { createdAt: 'desc' } });
-      expect(last).toMatchObject({ action: 'db.AuditLog.findMany' });
-      expect((last!.meta as any).reason).toBe('gate:read-AuditLog');
+      const lastModel = MODELS[MODELS.length - 1];
+      expect(last).toMatchObject({ action: `db.${lastModel}.findMany` });
+      expect((last!.meta as any).reason).toBe(`gate:read-${lastModel}`);
     });
   });
 

@@ -29,8 +29,8 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    than the VPS so a lost server never means lost backups). Cloudflare R2 is free up to 10 GB:
    R2 → Create bucket `bmstore-backups` → Manage R2 API tokens → "Object Read & Write" token scoped to that bucket.
    Save: endpoint (`https://ACCOUNT_ID.r2.cloudflarestorage.com`), access key, secret key.
-   If you prefer to keep media on the VPS, the stack bundles MinIO; you then only need the backup bucket.
-   ✅ You have endpoint + access key + secret for the **backup** bucket (and for media, unless using MinIO).
+   If you prefer to keep media on the VPS, the stack bundles RustFS (S3-compatible, compose profile `minio`); you then only need the backup bucket.
+   ✅ You have endpoint + access key + secret for the **backup** bucket (and for media, unless using the bundled RustFS).
 
 4. **DNS** — follow [DNS.md](DNS.md) section 1 now (records take time to propagate):
    `A store.bmtechx.in → SERVER_IP` and `A *.store.bmtechx.in → SERVER_IP`.
@@ -44,7 +44,7 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    ssh root@SERVER_IP
    ```
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/afraventurepvt-create/bmstore/main/deploy/server-setup.sh -o server-setup.sh
+   curl -fsSL https://raw.githubusercontent.com/BM-ACADEMY/bmstore/main/deploy/server-setup.sh -o server-setup.sh
    ```
    ```bash
    bash server-setup.sh --ssh-key "$(echo 'PASTE_YOUR_ssh-ed25519_PUBLIC_KEY_HERE')"
@@ -59,7 +59,7 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    ssh deploy@SERVER_IP
    ```
    ```bash
-   git clone https://github.com/afraventurepvt-create/bmstore.git /opt/bmstore && cd /opt/bmstore
+   git clone https://github.com/BM-ACADEMY/bmstore.git /opt/bmstore && cd /opt/bmstore
    ```
    (private repo: create a read-only deploy key on GitHub → Settings → Deploy keys, or use a fine-grained PAT.)
    ✅ `ls /opt/bmstore/deploy` lists `deploy.sh`, `compose.sh`, `docker-compose.prod.yml`.
@@ -73,7 +73,7 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    ```
    Fill every `CHANGE_ME_*`. Generate values with `openssl rand -base64 48` (passwords, JWT) and
    `openssl rand -base64 32` (**ENCRYPTION_KEY** — exactly this command). Set `ACME_EMAIL`, the `BACKUP_S3_*` block,
-   and either keep `MEDIA_BACKEND=minio` (set `MINIO_ROOT_*` = `S3_ACCESS_KEY/S3_SECRET_KEY`) or set `MEDIA_BACKEND=s3`
+   and either keep `MEDIA_BACKEND=minio` (bundled RustFS; `S3_ACCESS_KEY`/`S3_SECRET_KEY` are also its root credentials, so make them long random values) or set `MEDIA_BACKEND=s3`
    with your media bucket details and `COMPOSE_PROFILES=` (empty).
    ✅ `grep -c CHANGE_ME /etc/bmstore/production.env` prints `0`.
    ✅ `./deploy/compose.sh config --quiet` prints nothing (no errors).
@@ -88,10 +88,10 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
    ```bash
    cd /opt/bmstore && ./deploy/deploy.sh --no-pull
    ```
-   The script: builds → starts Postgres/Redis(/MinIO) → pre-deploy dump (local only until the bucket is configured)
+   The script: builds → starts Postgres/Redis(/RustFS) → pre-deploy dump (local only until the bucket is configured)
    → `prisma migrate deploy` as the owner role → grants for `bmstore_app` → starts api/tls-ask/caddy → health checks.
    ✅ Last line reads `=== deploy OK: <tag>`.
-   ✅ `./deploy/compose.sh ps` shows `api`, `caddy`, `tls-ask`, `postgres`, `redis` (and `minio`) as `running (healthy)`.
+   ✅ `./deploy/compose.sh ps` shows `api`, `caddy`, `tls-ask`, `postgres`, `redis` (and `rustfs`) as `running (healthy)`.
 
 10. **Check the platform host over HTTPS** (DNS from step 4 must be live):
     ```bash

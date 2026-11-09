@@ -13,7 +13,7 @@ for `bmtechx.in`. Replace `SERVER_IP` with the VPS IPv4.
 
 How the host field is written differs per provider: some want `store`, others the full `store.bmtechx.in`.
 The wildcard row is literally an asterisk: `*.store`. Both are needed: the first serves `store.bmtechx.in`, the
-wildcard serves every `<anything>.store.bmtechx.in` (`api.`, `admin.`, `console.`, `media.`, `minio.` and every tenant).
+wildcard serves every `<anything>.store.bmtechx.in` (`api.`, `admin.`, `console.`, `media.` and every tenant).
 
 If the zone is on **Cloudflare**: create the records with the cloud icon **grey (DNS only)** — Caddy must receive the
 TLS handshake itself to issue certificates. (Orange/proxied can be enabled later per record once you understand

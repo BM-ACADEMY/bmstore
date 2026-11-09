@@ -86,7 +86,8 @@ install -d -m 755 -o "$DEPLOY_USER" -g "$DEPLOY_USER" "$APP_DIR" /var/lib/bmstor
 install -d -m 750 -o root -g "$DEPLOY_USER" /etc/bmstore
 
 log "sshd hardening"
-SSH_PORT="$(sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}')"; SSH_PORT="${SSH_PORT:-22}"
+# awk must read all input (no early exit): under pipefail an early exit SIGPIPEs sshd and silently aborts the script.
+SSH_PORT="$( (sshd -T 2>/dev/null || true) | awk '$1=="port" && !p {print $2; p=1}' )"; SSH_PORT="${SSH_PORT:-22}"
 install -d /etc/ssh/sshd_config.d
 cat > /etc/ssh/sshd_config.d/90-bmstore.conf <<'CONF'
 # BMStore hardening (deploy/server-setup.sh). Keys only.

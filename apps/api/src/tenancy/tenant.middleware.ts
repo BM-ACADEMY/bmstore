@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NestMiddleware, NotFoundException } fro
 import { randomUUID } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { RequestContext, RequestStore } from '../common/request-context';
-import { BLOCKED_MESSAGE, SERVES_REQUESTS } from './plans';
+import { BLOCKED_MESSAGE, SERVES_REQUESTS, storeNotice } from './plans';
 import { markPreview } from './preview';
 import { TenantResolver } from './tenant-resolver.service';
 
@@ -28,8 +28,15 @@ export class TenantMiddleware implements NestMiddleware {
         if (r.kind === 'unknown') throw new NotFoundException('Store not found');
         if (r.kind === 'tenant') {
           const t = r.tenant;
-          if (!SERVES_REQUESTS[t.status]) throw new ForbiddenException(BLOCKED_MESSAGE[t.status] ?? 'Store unavailable');
-          if (t.expiresAt && new Date(t.expiresAt) <= new Date()) throw new ForbiddenException('Store subscription expired');
+          // 403 body carries a `notice` the storefront shows to visitors (see storeNotice in plans.ts).
+          if (!SERVES_REQUESTS[t.status]) {
+            const n = storeNotice(t.status === 'PARKED' ? 'PARKED' : 'SUSPENDED', t.name, t.whatsappNumber);
+            throw new ForbiddenException({ statusCode: 403, error: 'Forbidden', message: BLOCKED_MESSAGE[t.status] ?? 'Store unavailable', code: n.code, notice: n });
+          }
+          if (t.expiresAt && new Date(t.expiresAt) <= new Date()) {
+            const n = storeNotice('EXPIRED', t.name, t.whatsappNumber);
+            throw new ForbiddenException({ statusCode: 403, error: 'Forbidden', message: 'Store subscription expired', code: n.code, notice: n });
+          }
           if (t.status === 'BUILDING') markPreview(res);
           store.tenant = t;
           store.tenantId = t.id;

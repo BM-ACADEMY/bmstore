@@ -21,6 +21,8 @@ export interface AccessClaims {
   sub: string;
   role: Role;
   tid: string | null;
+  /** Set on developer impersonation sessions: the superadmin acting as this user. */
+  imp?: string;
 }
 
 const JWT_OPTS = { issuer: 'bmstore', audience: 'bmstore-api' } as const;
@@ -199,6 +201,17 @@ export class AuthService {
     }
     if (!claims.sub || !['superadmin', 'store_owner', 'staff'].includes(claims.role)) throw new UnauthorizedException('Invalid token');
     return { id: claims.sub, role: claims.role, tenantId: claims.tid ?? null };
+  }
+
+  /**
+   * Developer impersonation (console): a short access token for the store owner, marked with the superadmin's id,
+   * and NO refresh token, so the session ends on its own after the access TTL (15 minutes by default).
+   */
+  async issueImpersonation(userId: string, tenantId: string, impersonatorId: string): Promise<TokenPair> {
+    const accessToken = await this.jwt.signAsync({ role: 'store_owner', tid: tenantId, imp: impersonatorId } satisfies Omit<AccessClaims, 'sub'>, {
+      secret: this.cfg.jwtAccessSecret, algorithm: 'HS256', expiresIn: this.cfg.jwtAccessTtl as any, subject: userId, ...JWT_OPTS,
+    });
+    return { accessToken, refreshToken: '', expiresIn: this.cfg.jwtAccessTtl, tokenType: 'Bearer' };
   }
 
   private async issue(userId: string, role: Role, tenantId: string | null, familyId: string): Promise<TokenPair> {

@@ -105,7 +105,7 @@ export class PaymentsService {
       return o;
     });
     if (!result) return false;
-    const h = host ?? (t.customDomain ?? `${t.subdomain}.${this.cfg.platformBaseDomain}`);
+    const h = host ?? (t.customDomain ?? `${t.subdomain}.${this.cfg.rootDomain}`);
     const token = orderToken(this.cfg.jwtAccessSecret, t.id, result.orderNo, result.customer.phone);
     await this.notifications.orderPlaced({ ...result, paymentStatus: 'PAID' }, { name: result.customer.name, phone: result.customer.phone, email: result.customer.email }, this.checkout.urls(h, result.orderNo, token));
     return true;

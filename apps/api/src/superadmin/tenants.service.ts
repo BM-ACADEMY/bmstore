@@ -23,7 +23,7 @@ export class SuperadminTenantsService {
   ) {}
 
   /** Semantic audit row (in addition to the per-query rows the bypass writes). Never put secrets in `meta`. */
-  private async record(actor: AuthActor, action: string, tenantId: string | null, meta: Record<string, unknown>) {
+  async record(actor: AuthActor, action: string, tenantId: string | null, meta: Record<string, unknown>) {
     await this.prisma.base.auditLog.create({ data: { actorId: actor.id, action, tenantId, meta: meta as Prisma.InputJsonValue } });
   }
 

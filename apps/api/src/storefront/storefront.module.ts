@@ -16,6 +16,6 @@ import { RazorpayService } from './razorpay.service';
   imports: [CryptoModule, AuthModule],
   controllers: [StorefrontCatalogController, StorefrontCheckoutController, StorefrontInvoiceController, AdminInvoiceController],
   providers: [StorefrontCatalogService, CheckoutService, PaymentsService, RazorpayService, OtpService, InvoiceService, ConsoleOtpProvider, { provide: OtpProvider, useExisting: ConsoleOtpProvider }],
-  exports: [StorefrontCatalogService, CheckoutService, PaymentsService, RazorpayService, OtpService, ConsoleOtpProvider],
+  exports: [StorefrontCatalogService, CheckoutService, PaymentsService, RazorpayService, OtpService, InvoiceService, ConsoleOtpProvider],
 })
 export class StorefrontModule {}
