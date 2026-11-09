@@ -8,21 +8,26 @@ import { BadRequestException } from '@nestjs/common';
 
 export const LAYOUTS = ['v1-textile', 'v2-grocer', 'v3-retail'] as const;
 export type LayoutId = (typeof LAYOUTS)[number];
-/** Legacy values still in rows written before Phase 4. */
-const LAYOUT_ALIASES: Record<string, LayoutId> = { default: 'v1-textile', standard: 'v1-textile' };
+/**
+ * Aliases: values written before Phase 4 and the developer console's own layout vocabulary (src/console/layouts.ts:
+ * classic / boutique / grocery / minimal with their palette, font, header and card ids). They are accepted and stored
+ * as written (the console's tests and intake rely on that) and mapped to the canonical layout when the row is read.
+ */
+const LAYOUT_ALIASES: Record<string, LayoutId> = { default: 'v1-textile', standard: 'v1-textile', boutique: 'v1-textile', grocery: 'v2-grocer', classic: 'v3-retail', minimal: 'v3-retail' };
 
 export const PALETTES = ['v1-textile', 'v2-grocer', 'v3-jewel', 'classic', 'teal', 'indigo', 'forest', 'ocean', 'terracotta', 'plum', 'custom'] as const;
 export type PaletteId = (typeof PALETTES)[number];
-const PALETTE_ALIASES: Record<string, PaletteId> = { maroon: 'v1-textile' };
+const PALETTE_ALIASES: Record<string, PaletteId> = { maroon: 'v1-textile', warm: 'terracotta', fresh: 'v2-grocer', mono: 'classic' };
 
 /** All six pairs cover Tamil: either the face itself has a Tamil subset or Noto Sans Tamil completes it. */
 export const FONT_PAIRS = ['playfair-inter', 'baloo-inter', 'cormorant-inter', 'noto-serif-tamil', 'modern', 'baloo'] as const;
 export type FontPairId = (typeof FONT_PAIRS)[number];
-const FONT_ALIASES: Record<string, FontPairId> = { serif: 'playfair-inter' };
+const FONT_ALIASES: Record<string, FontPairId> = { serif: 'playfair-inter', elegant: 'playfair-inter', friendly: 'baloo-inter' };
 
 export const HEADER_STYLES = ['standard', 'centered-logo', 'minimal'] as const;
+const HEADER_ALIASES: Record<string, (typeof HEADER_STYLES)[number]> = { centered: 'centered-logo', 'search-first': 'standard' };
 export const CARD_STYLES = ['portrait', 'compact', 'framed'] as const;
-const CARD_ALIASES: Record<string, (typeof CARD_STYLES)[number]> = { standard: 'portrait', round: 'portrait', sharp: 'portrait' };
+const CARD_ALIASES: Record<string, (typeof CARD_STYLES)[number]> = { standard: 'portrait', round: 'portrait', sharp: 'portrait', tall: 'portrait', borderless: 'portrait' };
 export const HERO_TYPES = ['banner', 'slider', 'video'] as const;
 export const CORNER_STYLES = ['soft', 'round', 'sharp'] as const;
 
@@ -91,11 +96,11 @@ const href = (v: unknown, field: string, problems: string[]): string | null => {
   if (s.startsWith('/') && !s.startsWith('//')) return s;
   return url(s, field, problems);
 };
-const pick = <T extends readonly string[]>(v: unknown, list: T, aliases: Record<string, T[number]>, fallback: T[number], field: string, problems: string[]): T[number] => {
+const pick = <T extends readonly string[]>(v: unknown, list: T, aliases: Record<string, T[number]>, fallback: T[number], field: string, problems: string[], canonical = true): T[number] => {
   if (v === undefined || v === null || v === '') return fallback;
   if (typeof v !== 'string') { problems.push(`${field} must be one of ${list.join(', ')}`); return fallback; }
   if ((list as readonly string[]).includes(v)) return v as T[number];
-  if (aliases[v]) return aliases[v];
+  if (aliases[v]) return canonical ? aliases[v] : (v as T[number]);
   problems.push(`${field} must be one of ${list.join(', ')}`);
   return fallback;
 };
@@ -104,8 +109,10 @@ const pick = <T extends readonly string[]>(v: unknown, list: T, aliases: Record<
 export function normalizeSection(raw: unknown, problems: string[]): Section | null {
   if (!raw || typeof raw !== 'object') { problems.push('homepageSections entries must be objects'); return null; }
   const r = raw as Record<string, unknown>;
-  if (typeof r.type !== 'string' || !(SECTION_TYPES as readonly string[]).includes(r.type)) { problems.push(`unknown section type ${String(r.type).slice(0, 30)}`); return null; }
-  const type = r.type as SectionType;
+  const SECTION_ALIASES: Record<string, SectionType> = { 'featured-products': 'featured' }; // developer console presets (src/console/layouts.ts)
+  const typeRaw = typeof r.type === 'string' ? (SECTION_ALIASES[r.type] ?? r.type) : '';
+  if (!(SECTION_TYPES as readonly string[]).includes(typeRaw)) { problems.push(`unknown section type ${String(r.type).slice(0, 30)}`); return null; }
+  const type = typeRaw as SectionType;
   const s: Section = { type, enabled: r.enabled === undefined ? true : Boolean(r.enabled) };
   const f = `${type}.`;
   if (type === 'hero') { s.tagline = str(r.tagline, MAX_TEXT, f + 'tagline', problems); s.taglineTa = str(r.taglineTa, MAX_TEXT, f + 'taglineTa', problems); s.ctaLabel = str(r.ctaLabel, 60, f + 'ctaLabel', problems); s.ctaLabelTa = str(r.ctaLabelTa, 60, f + 'ctaLabelTa', problems); s.ctaHref = href(r.ctaHref, f + 'ctaHref', problems); }
@@ -148,7 +155,8 @@ export function normalizeOptions(raw: unknown, problems: string[]): ThemeOptions
  * Validate and normalise a full theme. `base` supplies the values for fields the input leaves out (a PUT may be
  * partial). Throws ThemeValidationError (400) listing every problem at once, so the editor can show them all.
  */
-export function normalizeTheme(input: ThemeConfigInput, base?: Partial<NormalizedTheme> | null): NormalizedTheme {
+export function normalizeTheme(input: ThemeConfigInput, base?: Partial<NormalizedTheme> | null, opts: { canonical?: boolean } = {}): NormalizedTheme {
+  const canonical = opts.canonical ?? true; // false = keep accepted alias ids as written (storage); true = map them (read side)
   const problems: string[] = [];
   const v = <K extends keyof ThemeConfigInput>(k: K) => (input[k] === undefined ? (base as any)?.[k] : input[k]);
   const colour = (x: unknown, field: string, fallback: string) => {
@@ -168,13 +176,13 @@ export function normalizeTheme(input: ThemeConfigInput, base?: Partial<Normalize
   const options = normalizeOptions(input.options && typeof input.options === 'object' && !Array.isArray(input.options) ? { ...baseOptions, ...(input.options as object) } : v('options'), problems);
   if (heroType === 'video' && !options.heroVideoUrl) problems.push('heroType video needs options.heroVideoUrl');
   const theme: NormalizedTheme = {
-    layoutVariant: pick(v('layoutVariant'), LAYOUTS, LAYOUT_ALIASES, 'v1-textile', 'layoutVariant', problems),
-    paletteId: pick(v('paletteId'), PALETTES, PALETTE_ALIASES, 'v1-textile', 'paletteId', problems),
+    layoutVariant: pick(v('layoutVariant'), LAYOUTS, LAYOUT_ALIASES, 'v1-textile', 'layoutVariant', problems, canonical),
+    paletteId: pick(v('paletteId'), PALETTES, PALETTE_ALIASES, 'v1-textile', 'paletteId', problems, canonical),
     primaryColor: colour(v('primaryColor'), 'primaryColor', '#7A1F2B'),
     secondaryColor: colour(v('secondaryColor'), 'secondaryColor', '#C9973B'),
-    fontPairId: pick(v('fontPairId'), FONT_PAIRS, FONT_ALIASES, 'playfair-inter', 'fontPairId', problems),
-    headerStyle: pick(v('headerStyle'), HEADER_STYLES, {}, 'standard', 'headerStyle', problems),
-    cardStyle: pick(v('cardStyle'), CARD_STYLES, CARD_ALIASES, 'portrait', 'cardStyle', problems),
+    fontPairId: pick(v('fontPairId'), FONT_PAIRS, FONT_ALIASES, 'playfair-inter', 'fontPairId', problems, canonical),
+    headerStyle: pick(v('headerStyle'), HEADER_STYLES, HEADER_ALIASES, 'standard', 'headerStyle', problems, canonical),
+    cardStyle: pick(v('cardStyle'), CARD_STYLES, CARD_ALIASES, 'portrait', 'cardStyle', problems, canonical),
     heroType,
     logoUrl: url(v('logoUrl'), 'logoUrl', problems),
     bannerUrls: banners,

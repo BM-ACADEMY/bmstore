@@ -90,7 +90,8 @@ export class SettingsService {
     const aboutImages = (dto.homepageSections ?? []).map((s: any) => s?.imageUrl).filter((u): u is string => typeof u === 'string' && u.length > 0);
     assertOwnMediaUrls(this.tid(), [...(dto.logoUrl ? [dto.logoUrl] : []), ...(dto.bannerUrls ?? []), ...aboutImages]);
     const current = await this.db.themeConfig.findUnique({ where: { tenantId: this.tid() } });
-    const theme = normalizeTheme(dto, current ? presentTheme(current) : null);
+    // aliases (console layouts, legacy ids) are stored as written; reads map them to the canonical layout
+    const theme = normalizeTheme(dto, current ? presentTheme(current) : null, { canonical: false });
     const data: Prisma.ThemeConfigUncheckedCreateInput = { ...theme, tenantId: this.tid(), homepageSections: theme.homepageSections as unknown as Prisma.InputJsonValue, options: theme.options as unknown as Prisma.InputJsonValue };
     const row = await this.db.themeConfig.upsert({ where: { tenantId: this.tid() }, create: data, update: data });
     return presentTheme(row);

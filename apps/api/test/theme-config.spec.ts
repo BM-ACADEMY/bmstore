@@ -36,6 +36,17 @@ describe('theme config validation', () => {
     expect(t.options.corners).toBe('round');
   });
 
+  it('accepts the developer console layout vocabulary: stored as written, read as the canonical layout', () => {
+    const stored = normalizeTheme({ layoutVariant: 'minimal', paletteId: 'mono', fontPairId: 'modern', headerStyle: 'minimal', cardStyle: 'borderless' }, null, { canonical: false });
+    expect(stored).toMatchObject({ layoutVariant: 'minimal', paletteId: 'mono', cardStyle: 'borderless' });
+    expect(presentTheme(stored as any)).toMatchObject({ layoutVariant: 'v3-retail', paletteId: 'classic', cardStyle: 'portrait' });
+    expect(presentTheme({ layoutVariant: 'grocery', paletteId: 'fresh', fontPairId: 'friendly', headerStyle: 'search-first', cardStyle: 'compact' })).toMatchObject({ layoutVariant: 'v2-grocer', paletteId: 'v2-grocer', fontPairId: 'baloo-inter', headerStyle: 'standard', cardStyle: 'compact' });
+    expect(presentTheme({ layoutVariant: 'boutique', paletteId: 'warm', fontPairId: 'elegant', headerStyle: 'centered', cardStyle: 'tall' })).toMatchObject({ layoutVariant: 'v1-textile', paletteId: 'terracotta', fontPairId: 'playfair-inter', headerStyle: 'centered-logo', cardStyle: 'portrait' });
+    expect(() => normalizeTheme({ layoutVariant: 'neon' }, null, { canonical: false })).toThrow(/layoutVariant/);
+    // console presets name the featured section "featured-products" with a limit
+    expect(normalizeTheme({ homepageSections: [{ type: 'hero' }, { type: 'featured-products', limit: 4 }, { type: 'about' }] }).homepageSections.slice(0, 2).map((x) => x.type)).toEqual(['hero', 'featured']);
+  });
+
   it('a partial update keeps the stored values for the fields it leaves out', () => {
     const base = normalizeTheme({ layoutVariant: 'v3-retail', paletteId: 'v3-jewel', primaryColor: '#1D1A26', secondaryColor: '#8E4A55', fontPairId: 'cormorant-inter' });
     const t = normalizeTheme({ headerStyle: 'centered-logo' }, base);
