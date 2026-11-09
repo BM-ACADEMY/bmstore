@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useCart } from '@/lib/cart';
 import { swatchColour } from '@/lib/colours';
 import { rupees, pct } from '@/lib/money';
-import { useStore, useT } from '@/lib/store-context';
+import { useLayout, useStore, useT } from '@/lib/store-context';
 import { whatsappLink } from '@/lib/wa';
 import { CheckIcon, WhatsAppIcon } from './icons';
 
@@ -16,7 +16,8 @@ export interface BuyProduct { id: string; name: string; slug: string; price: num
  */
 export function BuyBox({ p, url }: { p: BuyProduct; url: string }) {
   const t = useT();
-  const { store, payments } = useStore();
+  const { store, payments, settings } = useStore();
+  const { layout } = useLayout();
   const cart = useCart();
   const groups = useMemo(() => { const g = new Map<string, BuyProduct['variants']>(); for (const v of p.variants) g.set(v.optionName, [...(g.get(v.optionName) ?? []), v]); return [...g.entries()]; }, [p.variants]);
   const hasVariants = p.variants.length > 0;
@@ -51,7 +52,8 @@ export function BuyBox({ p, url }: { p: BuyProduct; url: string }) {
           <legend className="label flex items-baseline gap-2">{t('product.selectOption', { name })}{variant?.optionName === name && <span className="text-ink font-semibold">{variant.optionValue}</span>}</legend>
           <div className="flex flex-wrap gap-2.5">
             {vs.map((v) => {
-              const colour = name.toLowerCase().includes('colour') || name.toLowerCase().includes('color') || name.includes('நிறம்') ? swatchColour(v.optionValue) : null;
+              const n = name.toLowerCase();
+              const colour = n.includes('colour') || n.includes('color') || n.includes('finish') || name.includes('நிறம்') ? swatchColour(v.optionValue) : null;
               const on = v.id === variantId;
               const disabled = v.stock <= 0;
               return colour ? (
@@ -61,7 +63,7 @@ export function BuyBox({ p, url }: { p: BuyProduct; url: string }) {
                   {disabled && <span className="absolute inset-0 m-auto h-0.5 w-8 rotate-45 bg-ink/60 top-1/2 -translate-y-1/2" />}
                 </button>
               ) : (
-                <button key={v.id} type="button" onClick={() => { setVariantId(v.id); setQty(1); }} disabled={disabled} aria-pressed={on} className={`${on ? 'chip-on' : 'chip'} h-11 ${disabled ? 'opacity-40 line-through' : ''}`}>{v.optionValue}{v.priceDelta ? <span className="ml-1 text-xs opacity-70">{v.priceDelta > 0 ? '+' : '−'}{rupees(Math.abs(v.priceDelta))}</span> : null}</button>
+                <button key={v.id} type="button" onClick={() => { setVariantId(v.id); setQty(1); }} disabled={disabled} aria-pressed={on} className={`${on ? 'chip-on' : 'chip'} h-11 ${layout === 'v2-grocer' ? 'flex-col items-start justify-center h-14 px-3.5 leading-tight rounded-card' : ''} ${disabled ? 'opacity-40 line-through' : ''}`}>{v.optionValue}{layout === 'v2-grocer' ? <span className="text-xs opacity-75 font-normal">{rupees(p.price + v.priceDelta)}</span> : v.priceDelta ? <span className="ml-1 text-xs opacity-70">{v.priceDelta > 0 ? '+' : '−'}{rupees(Math.abs(v.priceDelta))}</span> : null}</button>
               );
             })}
           </div>
@@ -69,7 +71,7 @@ export function BuyBox({ p, url }: { p: BuyProduct; url: string }) {
       ))}
 
       <div className="mt-5 text-sm font-medium" aria-live="polite">
-        {out ? <span className="text-bad">{t('product.outOfStock')}</span> : stock <= 5 ? <span className="text-primary-text">{t('product.lowStock', { count: stock })}</span> : <span className="text-ok">{t('product.inStock')}</span>}
+        {out ? <span className="text-bad">{t('product.outOfStock')}</span> : stock <= settings.lowStockThreshold ? <span className="inline-flex items-center gap-1.5 rounded-pill bg-accent-soft text-accent-text px-2.5 py-1"><span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />{t('product.lowStock', { count: stock })}</span> : <span className="text-ok">{t('product.inStock')}</span>}
       </div>
 
       <div className="mt-5 flex gap-3">

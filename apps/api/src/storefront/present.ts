@@ -23,5 +23,5 @@ export function presentProduct(p: Product & { variants?: Variant[]; category?: P
 }
 
 export function presentCategory(c: Category & { productCount?: number }) {
-  return { id: c.id, name: c.name, slug: c.slug, parentId: c.parentId, image: c.image, productCount: c.productCount ?? 0 };
+  return { id: c.id, name: c.name, nameTa: c.nameTa ?? null, slug: c.slug, parentId: c.parentId, image: c.image, productCount: c.productCount ?? 0 };
 }

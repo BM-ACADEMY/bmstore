@@ -135,9 +135,12 @@ model ThemeConfig {
   fontPairId       String   @default("modern") @map("font_pair_id")
   headerStyle      String   @default("standard") @map("header_style")
   cardStyle        String   @default("standard") @map("card_style")
+  heroType         String   @default("banner") @map("hero_type") // banner | slider | video
   logoUrl          String?  @map("logo_url")
   bannerUrls       String[] @map("banner_urls")
   homepageSections Json     @default("[]") @map("homepage_sections")
+  /// Validated bag of tier-1 options (corner radius, about block, hero video, demo switcher): src/theme/theme-config.ts
+  options          Json     @default("{}")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -148,6 +151,7 @@ model Category {
   id       String  @id @default(uuid()) @db.Uuid
   tenantId String  @map("tenant_id") @db.Uuid
   name     String
+  nameTa   String? @map("name_ta") // optional Tamil label shown next to / instead of the name
   slug     String
   parentId String? @map("parent_id") @db.Uuid
   image    String?

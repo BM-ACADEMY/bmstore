@@ -106,7 +106,8 @@ export function OrderView({ order, justPlaced, retry }: { order: OrderData; just
           {order.codCharge > 0 && <Row l={t('checkout.codFee')} v={rupees(order.codCharge)} />}
           <div className="flex justify-between text-lg font-semibold mt-2 border-t border-line pt-3"><span>{t('checkout.total')}</span><span>{rupees(order.total)}</span></div>
           {order.tax > 0 && <p className="text-xs text-ink-3 mt-1">{t('checkout.tax')} {rupees(order.tax)}</p>}
-          <a href={order.invoiceUrl} className="btn-outline mt-5 w-full" download>{t('order.invoice')}</a>
+          <a href={order.invoiceUrl} className="btn-outline mt-5 w-full" download>{store.gstNumber ? t('order.gstInvoice') : t('order.invoice')}</a>
+          <Link href={`/order/${encodeURIComponent(order.orderNo)}?t=${order.token}`} className="btn-ghost mt-2 w-full">{t('order.trackCta')}</Link>
           {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className="btn-wa mt-2 w-full"><WhatsAppIcon className="h-5 w-5" />{t('order.whatsapp')}</a>}
           <Link href="/c/all" className="btn-ghost mt-2 w-full">{t('cart.continue')}</Link>
         </div>

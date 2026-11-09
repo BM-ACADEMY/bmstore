@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TenantSecretsService } from '../crypto/tenant-secrets.service';
 import { presentCategory, presentProduct, PublicProduct } from './present';
 import { parseItems } from '../orders/order-items';
+import { presentTheme } from '../theme/theme-config';
 
 export const PRODUCT_SORTS = ['featured', 'newest', 'price_asc', 'price_desc', 'name'] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
@@ -51,12 +52,10 @@ export class StorefrontCatalogService {
     ]);
     return {
       store: { name: t.name, slug: t.slug, status: t.status, address: t.address, gstNumber: t.gstNumber, supportPhone: t.supportPhone, whatsappNumber: t.whatsappNumber },
-      theme: theme
-        ? { layoutVariant: theme.layoutVariant, paletteId: theme.paletteId, primaryColor: theme.primaryColor, secondaryColor: theme.secondaryColor, fontPairId: theme.fontPairId, headerStyle: theme.headerStyle, cardStyle: theme.cardStyle, logoUrl: theme.logoUrl, bannerUrls: theme.bannerUrls, homepageSections: theme.homepageSections }
-        : null,
+      theme: presentTheme(theme ?? {}),
       settings: settings
-        ? { shippingMode: settings.shippingMode, flatRate: settings.flatRate, freeAbove: settings.freeAbove, codEnabled: settings.codEnabled, codCharge: settings.codCharge, cities: ((settings.cityRates as any[]) ?? []).map((c) => ({ city: c.city, ratePaise: c.ratePaise })) }
-        : { shippingMode: 'FLAT', flatRate: 0, freeAbove: null, codEnabled: true, codCharge: 0, cities: [] },
+        ? { shippingMode: settings.shippingMode, flatRate: settings.flatRate, freeAbove: settings.freeAbove, codEnabled: settings.codEnabled, codCharge: settings.codCharge, cities: ((settings.cityRates as any[]) ?? []).map((c) => ({ city: c.city, ratePaise: c.ratePaise })), lowStockThreshold: settings.lowStockThreshold }
+        : { shippingMode: 'FLAT', flatRate: 0, freeAbove: null, codEnabled: true, codCharge: 0, cities: [], lowStockThreshold: 5 },
       payments: { cod: settings?.codEnabled ?? true, online: Boolean(rzp) },
       categories,
       pages,
@@ -85,18 +84,26 @@ export class StorefrontCatalogService {
       this.db.product.findMany({ where: ACTIVE, orderBy: { createdAt: 'desc' }, take: 8, include: INCLUDE }),
       this.bestsellers(8),
     ]);
-    const sections = Array.isArray(theme?.homepageSections) ? (theme!.homepageSections as any[]) : [];
-    const featuredIds: string[] = sections.find((s) => s?.type === 'featured')?.productIds ?? [];
+    const normalized = presentTheme(theme ?? {});
+    const sections = normalized.homepageSections;
+    const featuredIds: string[] = sections.find((s) => s.type === 'featured')?.productIds ?? [];
     let featured = newest;
     if (featuredIds.length) {
       const picked = await this.db.product.findMany({ where: { ...ACTIVE, id: { in: featuredIds } }, include: INCLUDE });
       const order = new Map(featuredIds.map((id, i) => [id, i]));
       featured = picked.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
     }
-    const offer = sections.find((s) => s?.type === 'offer_strip');
+    const offer = sections.find((s) => s.type === 'offer_strip');
+    const hero = sections.find((s) => s.type === 'hero');
+    const about = sections.find((s) => s.type === 'about');
+    const featuredSection = sections.find((s) => s.type === 'featured');
     return {
-      offer: offer ? { text: String(offer.text ?? ''), textTa: offer.textTa ? String(offer.textTa) : null, href: offer.href ? String(offer.href) : null } : null,
-      hero: { bannerUrls: theme?.bannerUrls ?? [], tagline: sections.find((s) => s?.type === 'hero')?.tagline ?? null, taglineTa: sections.find((s) => s?.type === 'hero')?.taglineTa ?? null },
+      /** Section order + enabled flags come from the theme; the data below is keyed by type. */
+      sections: sections.map((s) => ({ type: s.type, enabled: s.enabled })),
+      offer: offer?.text || offer?.textTa ? { text: offer.text ?? '', textTa: offer.textTa ?? null, href: offer.href ?? null } : null,
+      hero: { type: normalized.heroType, bannerUrls: normalized.bannerUrls, videoUrl: normalized.options.heroVideoUrl, tagline: hero?.tagline ?? null, taglineTa: hero?.taglineTa ?? null, ctaLabel: hero?.ctaLabel ?? null, ctaLabelTa: hero?.ctaLabelTa ?? null, ctaHref: hero?.ctaHref ?? null },
+      about: about?.enabled ? { title: about.title ?? null, titleTa: about.titleTa ?? null, body: about.body ?? null, bodyTa: about.bodyTa ?? null, imageUrl: about.imageUrl ?? null } : null,
+      featuredTitle: featuredSection ? { title: featuredSection.title ?? null, titleTa: featuredSection.titleTa ?? null } : null,
       shipping: settings ? { mode: settings.shippingMode, flatRate: settings.flatRate, freeAbove: settings.freeAbove, codEnabled: settings.codEnabled } : null,
       categories: categories.filter((c) => !c.parentId),
       featured: featured.map(presentProduct),

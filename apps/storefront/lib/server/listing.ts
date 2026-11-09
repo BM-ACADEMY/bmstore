@@ -5,8 +5,8 @@ import { StoreApiError, storeGet } from './api';
 
 export interface Listing {
   items: CardProduct[]; total: number; page: number; pageSize: number;
-  category: { id: string; name: string; slug: string; parentId: string | null } | null;
-  children: Array<{ id: string; name: string; slug: string }>;
+  category: { id: string; name: string; nameTa: string | null; slug: string; parentId: string | null } | null;
+  children: Array<{ id: string; name: string; nameTa: string | null; slug: string }>;
   facets: { minPrice: number; maxPrice: number; options: Record<string, string[]> };
 }
 export type Search = Record<string, string | string[] | undefined>;

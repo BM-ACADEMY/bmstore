@@ -2,19 +2,26 @@ import 'server-only';
 import { cookies, headers } from 'next/headers';
 import { isLang, Lang, MESSAGES, translate } from '@/lib/i18n';
 import type { PublicSettings, StoreInfo } from '@/lib/store-context';
-import type { ThemeRow } from '@/lib/theme';
+import { DEFAULT_THEME, layoutOf, LayoutId, ThemeRow } from '@/lib/theme';
 import { storeGet, storeHost } from './api';
+import { applyPreview } from './theme-preview';
 
+export interface BootCategory { id: string; name: string; nameTa: string | null; slug: string; parentId: string | null; image: string | null; productCount: number }
 export interface Bootstrap {
   store: StoreInfo;
-  theme: ThemeRow | null;
+  theme: ThemeRow;
   settings: PublicSettings;
   payments: { cod: boolean; online: boolean };
-  categories: Array<{ id: string; name: string; slug: string; parentId: string | null; image: string | null; productCount: number }>;
+  categories: BootCategory[];
   pages: Array<{ slug: string; title: string; isPolicy: boolean }>;
 }
 
-export const getBootstrap = () => storeGet<Bootstrap>('/storefront/bootstrap');
+/** Store bootstrap with the browser's theme preview (if any) merged in; `layout` is the resolved layout id. */
+export async function getBootstrap(): Promise<Bootstrap & { layout: LayoutId; previewing: boolean }> {
+  const boot = await storeGet<Bootstrap>('/storefront/bootstrap');
+  const { theme, previewing } = await applyPreview(boot.theme ?? DEFAULT_THEME);
+  return { ...boot, theme, previewing, layout: layoutOf(theme) };
+}
 
 export async function getLang(): Promise<Lang> {
   const c = (await cookies()).get('bm_lang')?.value;
@@ -25,6 +32,7 @@ export async function getT() {
   const lang = await getLang();
   return { lang, t: (key: string, vars?: Record<string, string | number>) => translate(lang, key, vars), messages: MESSAGES[lang] };
 }
+export type T = (key: string, vars?: Record<string, string | number>) => string;
 export async function isPreview(): Promise<boolean> {
   return (await headers()).get('x-store-status') === 'BUILDING';
 }

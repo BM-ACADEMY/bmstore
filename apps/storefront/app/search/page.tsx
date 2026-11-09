@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { Filters } from '@/components/filters';
 import { SearchIcon } from '@/components/icons';
-import { cardLabels } from '@/components/labels';
 import { Pagination } from '@/components/pagination';
-import { ProductCard, ProductGrid } from '@/components/product-card';
+import { Products } from '@/components/product-grid';
 import { getT } from '@/lib/server/store';
 import { fetchListing, listingQuery, Search } from '@/lib/server/listing';
 
@@ -17,7 +16,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const q = typeof sp.q === 'string' ? sp.q.trim() : '';
   const { t } = await getT();
   const listing = q ? await fetchListing(sp) : null;
-  const labels = cardLabels(t);
   const href = (page: number) => { const p = listingQuery(sp); p.set('page', String(page)); return `/search?${p}`; };
   return (
     <div className="container-x pt-6 pb-10">
@@ -34,7 +32,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         <div className="mt-8">
           <h2 className="font-heading text-xl mb-4">{t('search.for', { q })}</h2>
           <div className="mb-6"><Filters facets={listing.facets} total={listing.total} /></div>
-          {listing.items.length ? <ProductGrid>{listing.items.map((p, i) => <ProductCard key={p.id} p={p} priority={i < 2} labels={labels} />)}</ProductGrid> : <div className="card p-10 text-center text-ink-2">{t('category.noResults')}</div>}
+          {listing.items.length ? <Products items={listing.items} priorityCount={2} /> : <div className="card p-10 text-center text-ink-2">{t('category.noResults')}</div>}
           <Pagination page={listing.page} pageSize={listing.pageSize} total={listing.total} href={href} />
         </div>
       )}

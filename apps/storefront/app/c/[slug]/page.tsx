@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Filters } from '@/components/filters';
-import { cardLabels } from '@/components/labels';
 import { Pagination } from '@/components/pagination';
-import { ProductCard, ProductGrid } from '@/components/product-card';
+import { Products } from '@/components/product-grid';
 import { fetchListing, listingQuery, Search } from '@/lib/server/listing';
 import { getBootstrap, getT } from '@/lib/server/store';
+import { pickLang } from '@/lib/i18n';
 
 type Params = { slug: string };
 
@@ -21,10 +21,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function CategoryPage({ params, searchParams }: { params: Promise<Params>; searchParams: Promise<Search> }) {
   const { slug } = await params;
   const sp = await searchParams;
-  const [{ t }, boot] = await Promise.all([getT(), getBootstrap()]);
+  const [{ t, lang }, boot] = await Promise.all([getT(), getBootstrap()]);
   const listing = await fetchListing(sp, slug === 'all' ? {} : { category: slug });
-  const labels = cardLabels(t);
-  const title = slug === 'all' ? t('category.all') : listing.category?.name ?? t('category.all');
+  const title = slug === 'all' ? t('category.all') : pickLang(lang, listing.category?.name, listing.category?.nameTa) ?? t('category.all');
   const parent = listing.category?.parentId ? boot.categories.find((c) => c.id === listing.category!.parentId) : null;
   const href = (page: number) => { const p = listingQuery(sp); p.set('page', String(page)); return `/c/${slug}?${p}`; };
   const crumbs = [{ name: t('nav.home'), item: '/' }, ...(parent ? [{ name: parent.name, item: `/c/${parent.slug}` }] : []), { name: title, item: `/c/${slug}` }];
@@ -35,11 +34,11 @@ export default async function CategoryPage({ params, searchParams }: { params: P
       </nav>
       <h1 className="font-heading text-3xl sm:text-4xl">{title}</h1>
       {listing.children.length > 0 && (
-        <div className="scroll-x mt-4">{listing.children.map((c) => <Link key={c.id} href={`/c/${c.slug}`} className="chip shrink-0">{c.name}</Link>)}</div>
+        <div className="scroll-x mt-4">{listing.children.map((c) => <Link key={c.id} href={`/c/${c.slug}`} className="chip shrink-0">{pickLang(lang, c.name, c.nameTa)}</Link>)}</div>
       )}
       <div className="mt-5 mb-6"><Filters facets={listing.facets} total={listing.total} /></div>
       {listing.items.length ? (
-        <ProductGrid>{listing.items.map((p, i) => <ProductCard key={p.id} p={p} priority={i < 2} labels={labels} />)}</ProductGrid>
+        <Products items={listing.items} priorityCount={2} />
       ) : (
         <div className="card p-10 text-center text-ink-2">{t('category.noResults')} <Link href={`/c/${slug}`} className="text-primary-text font-semibold underline underline-offset-4">{t('category.clear')}</Link></div>
       )}

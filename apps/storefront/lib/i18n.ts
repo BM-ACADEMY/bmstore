@@ -13,3 +13,8 @@ export function translate(lang: Lang, key: string, vars?: Record<string, string 
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
   return s;
 }
+
+/** Pick the Tamil variant of an owner-entered text when the page is in Tamil and one exists. */
+export function pickLang(lang: Lang, en: string | null | undefined, ta: string | null | undefined): string | null {
+  return (lang === 'ta' && ta) || en || ta || null;
+}
