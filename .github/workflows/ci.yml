@@ -111,6 +111,6 @@ jobs:
       - name: Admin UI typecheck and build
         run: npm run typecheck && npm run build
         working-directory: apps/admin
-      - name: Storefront typecheck and build
-        run: npm run typecheck && npm run build
+      - name: Storefront typecheck, theme tests and build
+        run: npm run typecheck && npm test && npm run build
         working-directory: apps/storefront

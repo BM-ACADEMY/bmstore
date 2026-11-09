@@ -50,10 +50,10 @@ export function HomeV2(props: HomeProps) {
               <Link key={c.id} href={`/c/${c.slug}`} className="card overflow-hidden flex items-stretch min-h-[88px] group active:scale-[0.99] transition">
                 <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
                   <div className="font-semibold text-[14px] leading-tight text-ink line-clamp-3 [overflow-wrap:break-word]">{primary}</div>
-                  {secondary && <div className="mt-0.5 text-[13px] leading-tight text-ink-2 line-clamp-1" lang={lang === 'ta' ? 'en' : 'ta'}>{secondary}</div>}
+                  {secondary && <div className="mt-0.5 text-[13px] leading-tight text-ink-2 line-clamp-2" lang={lang === 'ta' ? 'en' : 'ta'}>{secondary}</div>}
                   <div className="mt-1.5 text-[11px] text-ink-3 whitespace-nowrap truncate">{c.productCount}</div>
                 </div>
-                <div className="relative w-[72px] sm:w-[96px] shrink-0 bg-primary-soft">
+                <div className="relative w-[64px] sm:w-[96px] shrink-0 bg-primary-soft">
                   {c.image ? <Image src={c.image} alt="" fill sizes="96px" className="object-cover transition group-hover:scale-105" /> : <span className="absolute inset-0 grid place-items-center font-heading text-3xl text-primary-text/60">{c.name[0]}</span>}
                 </div>
               </Link>

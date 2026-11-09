@@ -110,7 +110,7 @@ export function CartView() {
           ) : (
             <div className="flex gap-2">
               <input id="cart-coupon" className="field uppercase h-11 min-h-11" value={input} onChange={(e) => { setInput(e.target.value.toUpperCase()); setError(null); }} placeholder="WELCOME10" />
-              <button type="button" className="btn-outline h-11 min-h-11 px-4" disabled={!input.trim() || busy} onClick={apply}>{t('checkout.applyCoupon')}</button>
+              <button type="button" className="btn-outline h-11 min-h-11 px-4 shrink-0 whitespace-nowrap" disabled={!input.trim() || busy} onClick={apply}>{t('checkout.applyCoupon')}</button>
             </div>
           )}
           {error && <p className="mt-1 text-xs text-bad" role="alert">{error}</p>}
