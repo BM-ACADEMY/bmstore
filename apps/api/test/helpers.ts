@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { PrismaClient } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
@@ -7,7 +8,7 @@ import { configureApp } from '../src/app.setup';
 
 export async function createApp(): Promise<INestApplication> {
   const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
-  const app = mod.createNestApplication();
+  const app = mod.createNestApplication(new ExpressAdapter(), { rawBody: true });
   configureApp(app);
   await app.init();
   return app;

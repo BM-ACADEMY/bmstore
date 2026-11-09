@@ -16,6 +16,6 @@ import { ThrottleService } from './throttle.service';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
-  exports: [AuthService],
+  exports: [AuthService, ThrottleService],
 })
 export class AuthModule {}

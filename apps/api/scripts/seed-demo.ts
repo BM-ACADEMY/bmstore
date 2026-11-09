@@ -28,22 +28,49 @@ import { TenantResolver } from '../src/tenancy/tenant-resolver.service';
 export interface SeedOptions { slug: string; name?: string; ownerEmail?: string; password?: string; withImages?: boolean; withOrders?: boolean; quiet?: boolean }
 export interface SeedResult { tenantId: string; products: number; images: number; orders: number; customers: number; warnings: string[] }
 
-const CATEGORY_COLOURS: Record<string, string> = { Sarees: '#7f1d1d', Kurtas: '#0f766e', Jewellery: '#b45309', 'Home Decor': '#3f6212' };
+const CATEGORY_COLOURS: Record<string, [string, string]> = { Sarees: ['#7a1f2b', '#c9973b'], Kurtas: ['#1f4e5f', '#e8b920'], Jewellery: ['#6b3a12', '#f0c060'], 'Home Decor': ['#3f5a2a', '#d9a441'] };
+const NAME_COLOURS: Record<string, string> = { maroon: '#7a1f2b', 'peacock blue': '#0e6e8c', mustard: '#d4a017', 'bottle green': '#0f4c35', 'rose pink': '#d4647a', beige: '#d8c3a5', white: '#f4efe6', indigo: '#2b3a8c', teal: '#0f766e', cream: '#f3e9d2', yellow: '#e8b920', 'antique gold': '#b8862b', ikat: '#2f4f6f' };
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-/** A 1200x1200 placeholder: category colour, product initials, product name. Real enough to see layouts with. */
+/**
+ * A 1200x1500 placeholder that reads as a textile: body colour from the product name (or the category), a woven
+ * stripe texture, a zari-style border with temple motifs and a contrasting pallu block. Real enough to judge layouts.
+ */
 export async function placeholderImage(name: string, category: string, i: number): Promise<Buffer> {
-  const bg = CATEGORY_COLOURS[category] ?? '#374151';
-  const initials = name.split(/[\s-]+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('');
-  const label = name.length > 26 ? name.slice(0, 25) + '…' : name;
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200">
-    <rect width="1200" height="1200" fill="${bg}"/>
-    <circle cx="${300 + (i % 5) * 150}" cy="${250 + (i % 3) * 120}" r="420" fill="#ffffff" fill-opacity="0.08"/>
-    <circle cx="${900 - (i % 4) * 100}" cy="${950 - (i % 2) * 200}" r="300" fill="#000000" fill-opacity="0.12"/>
-    <text x="600" y="640" font-family="sans-serif" font-size="360" font-weight="700" fill="#ffffff" text-anchor="middle">${esc(initials)}</text>
-    <text x="600" y="1080" font-family="sans-serif" font-size="56" fill="#ffffff" fill-opacity="0.9" text-anchor="middle">${esc(label)}</text>
+  const [catBg, zari] = CATEGORY_COLOURS[category] ?? ['#374151', '#c9973b'];
+  const key = Object.keys(NAME_COLOURS).find((k) => name.toLowerCase().includes(k));
+  const bg = key ? NAME_COLOURS[key] : catBg;
+  const light = ['#f4efe6', '#f3e9d2', '#d8c3a5', '#e8b920', '#d4a017'].includes(bg);
+  const ink = light ? '#2b1b17' : '#ffffff';
+  const stripes = Array.from({ length: 30 }, (_, n) => `<rect x="0" y="${n * 50 + (i % 3) * 7}" width="1200" height="2" fill="${ink}" fill-opacity="0.07"/>`).join('');
+  const motifs = Array.from({ length: 12 }, (_, n) => `<path d="M${50 + n * 100} 1335l28 28-28 28-28-28z" fill="${zari}"/>`).join('');
+  const label = name.length > 30 ? name.slice(0, 29) + '…' : name;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500">
+    <rect width="1200" height="1500" fill="${bg}"/>${stripes}
+    <rect x="860" y="0" width="340" height="1500" fill="${zari}" fill-opacity="0.18"/>
+    <rect x="860" y="0" width="6" height="1500" fill="${zari}"/>
+    <rect x="0" y="1290" width="1200" height="14" fill="${zari}"/>
+    <rect x="0" y="1405" width="1200" height="14" fill="${zari}"/>${motifs}
+    <rect x="0" y="1440" width="1200" height="60" fill="${zari}" fill-opacity="0.5"/>
+    <text x="80" y="200" font-family="serif" font-size="60" fill="${ink}" fill-opacity="0.85">${esc(label)}</text>
+    <text x="80" y="260" font-family="sans-serif" font-size="34" fill="${ink}" fill-opacity="0.6">${esc(category)}</text>
   </svg>`;
-  return sharp(Buffer.from(svg)).jpeg({ quality: 85 }).toBuffer();
+  return sharp(Buffer.from(svg)).jpeg({ quality: 86 }).toBuffer();
+}
+
+/** 1800x1000 hero banner in the store colours with the zari motif. */
+export async function bannerImage(): Promise<Buffer> {
+  const motifs = Array.from({ length: 18 }, (_, n) => `<path d="M${50 + n * 100} 930l22 22-22 22-22-22z" fill="#c9973b"/>`).join('');
+  const weave = Array.from({ length: 20 }, (_, n) => `<rect x="0" y="${n * 50}" width="1800" height="2" fill="#ffffff" fill-opacity="0.05"/>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1000">
+    <rect width="1800" height="1000" fill="#7a1f2b"/>${weave}
+    <rect x="1180" y="0" width="620" height="1000" fill="#c9973b" fill-opacity="0.22"/>
+    <rect x="1180" y="0" width="8" height="1000" fill="#c9973b"/>
+    <rect x="0" y="900" width="1800" height="10" fill="#c9973b"/>${motifs}
+    <rect x="0" y="990" width="1800" height="10" fill="#c9973b"/>
+    <circle cx="1490" cy="420" r="260" fill="#c9973b" fill-opacity="0.25"/>
+  </svg>`;
+  return sharp(Buffer.from(svg)).jpeg({ quality: 86 }).toBuffer();
 }
 
 export async function seedDemo(app: INestApplicationContext, opts: SeedOptions): Promise<SeedResult> {
@@ -81,7 +108,13 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
   await prisma.base.user.create({ data: { tenantId: tenant.id, email: ownerEmail, passwordHash, role: 'store_owner' } });
   await prisma.base.user.create({ data: { tenantId: tenant.id, email: `staff@${opts.slug}.test`, passwordHash, role: 'staff' } });
   await prisma.base.settings.create({ data: { tenantId: tenant.id, shippingMode: 'FREE_ABOVE', flatRate: 7900, freeAbove: 199900, codEnabled: true, codCharge: 4900, orderPrefix: 'SLS', cityRates: [{ city: 'Chennai', ratePaise: 4900 }, { city: 'Kanchipuram', ratePaise: 0 }] } });
-  await prisma.base.themeConfig.create({ data: { tenantId: tenant.id, paletteId: 'teal', primaryColor: '#0f766e', secondaryColor: '#c9731a' } });
+  await prisma.base.themeConfig.create({ data: {
+    tenantId: tenant.id, layoutVariant: 'v1-textile', paletteId: 'v1-textile', primaryColor: '#7A1F2B', secondaryColor: '#C9973B', fontPairId: 'playfair-inter', headerStyle: 'centered-logo', cardStyle: 'portrait',
+    homepageSections: [
+      { type: 'offer_strip', text: 'New Kanchipuram silks for the wedding season', textTa: 'திருமண சீசனுக்கு புதிய காஞ்சிபுரம் பட்டுப் புடவைகள்' },
+      { type: 'hero', tagline: 'Handwoven silks from Kanchipuram', taglineTa: 'காஞ்சிபுரத்தின் கைத்தறி பட்டு' },
+    ],
+  } });
   log(`store "${name}" (${opts.slug}) created, owner ${ownerEmail}`);
 
   const csv = readFileSync(join(__dirname, '..', 'seed', 'demo-products.csv'));
@@ -102,8 +135,15 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
       const done = await media.complete({ ids: pre.files.map((p) => p.id) });
       const bad = done.results.filter((r) => r.status !== 'UPLOADED');
       if (bad.length) warnings.push(`${bad.length} image(s) could not be confirmed`);
-      await worker.runOnce(25);
-      images = await db.media.count({ where: { status: 'READY' } });
+      // hero banner through the same pipeline
+      const banner = await bannerImage();
+      const bpre = await media.presign({ files: [{ filename: 'hero-banner.jpg', contentType: 'image/jpeg', size: banner.length, kind: 'banner' }] });
+      await storage.put((await db.media.findUniqueOrThrow({ where: { id: bpre.files[0].id } })).originalKey, banner, 'image/jpeg');
+      await media.complete({ ids: [bpre.files[0].id] });
+      await worker.runOnce(30);
+      const bannerRow = await db.media.findUnique({ where: { id: bpre.files[0].id } });
+      if (bannerRow?.key) await db.themeConfig.update({ where: { tenantId: tenant.id }, data: { bannerUrls: [storage.publicUrl(bannerRow.key)] } });
+      images = await db.media.count({ where: { status: 'READY', kind: 'product' } });
       const failed = await db.media.findMany({ where: { status: 'FAILED' } });
       for (const f of failed) warnings.push(`image ${f.filename}: ${f.error}`);
       log(`${images} placeholder images processed to WebP`);
@@ -113,6 +153,22 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
     const report = await imports.run(csv, { filename: 'demo-products.csv', status: 'ACTIVE' });
     if (report.failed) warnings.push(`${report.failed} demo rows failed: ${report.errors.map((e) => `row ${e.row}: ${e.reason}`).join('; ')}`);
     log(`${report.imported} products imported into ${await db.category.count()} categories`);
+    // category circles use their first product photo; variants: colours on the silk sarees, sizes on kurtas
+    for (const c of await db.category.findMany()) {
+      const first = await db.product.findFirst({ where: { categoryId: c.id, images: { isEmpty: false } }, orderBy: { name: 'asc' } });
+      if (first) await db.category.update({ where: { id: c.id }, data: { image: first.images[0] } });
+    }
+    const variantPlan: Array<[RegExp, string, Array<[string, number, number]>]> = [
+      [/^Kanchipuram Silk Saree/, 'Colour', [['Maroon', 0, 3], ['Peacock Blue', 25000, 2], ['Bottle Green', 0, 0], ['Mustard', -20000, 4]]],
+      [/^Soft Silk Saree/, 'Colour', [['Rose Pink', 0, 5], ['Lavender', 0, 2], ['Sea Green', 0, 1]]],
+      [/Kurta|Pyjama/, 'Size', [['S', 0, 4], ['M', 0, 6], ['L', 0, 5], ['XL', 10000, 2], ['XXL', 15000, 0]]],
+      [/Veshti|Dhoti/, 'Length', [['4 muzham', 0, 5], ['8 muzham', 30000, 3]]],
+    ];
+    for (const p of await db.product.findMany()) {
+      const plan = variantPlan.find(([re]) => re.test(p.name));
+      if (!plan) continue;
+      await db.variant.createMany({ data: plan[2].map(([optionValue, priceDelta, stock]) => ({ tenantId: tenant.id, productId: p.id, optionName: plan[1], optionValue, priceDelta, stock })) });
+    }
 
     // 4. coupons, policy pages
     await db.coupon.createMany({ data: [
@@ -149,7 +205,7 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
         await db.order.create({ data: {
           tenantId: tenant.id, orderNo: `SLS-${1041 + i}`, customerId: c.id, items, subtotal, shipping, tax: 0, total: subtotal + shipping + (paymentMode === 'COD' ? 4900 : 0),
           paymentMode: paymentMode as any, paymentStatus: paymentStatus as any, orderStatus: orderStatus as any, address: addr,
-          createdAt: new Date(Date.now() - daysAgo * 86_400_000 - (i % 5) * 3_600_000),
+          createdAt: new Date(Date.now() - daysAgo * 86_400_000 - (i % 5) * 600_000), // minutes, so "today" orders stay today around midnight IST
         } });
         orders++;
       }

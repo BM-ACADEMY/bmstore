@@ -53,7 +53,7 @@ const factories: Record<string, (db: any, s: Seed, i: number, over?: Row) => Pro
   TenantUsage: (db, _s, _i, o) => db.tenantUsage.create({ data: { ...o } }), // triggers then keep it current
   Category: (db, s, i, o) => db.category.create({ data: { name: `cat${i}`, slug: `cat-${i}-${rnd()}`, parentId: i > 0 ? s.Category[0].id : undefined, ...o } }),
   Customer: (db, _s, i, o) => db.customer.create({ data: { name: `cust${i}`, phone: `9${rnd()}${i}`, email: `c${i}-${rnd()}@x.test`, addresses: [{ line1: 'x' }], ...o } }),
-  Product: (db, s, i, o) => db.product.create({ data: { name: `prod${i}`, slug: `prod-${i}-${rnd()}`, price: 10, mrp: 12, sku: `sku-${rnd()}`, stock: 3, categoryId: s.Category[0].id, images: ['i.png'], hsnCode: '6109', ...o } }),
+  Product: (db, s, i, o) => db.product.create({ data: { name: `prod${i}`, slug: `prod-${i}-${rnd()}`, price: 10, mrp: 12, sku: `sku-${rnd()}`, stock: 3, status: 'ACTIVE', categoryId: s.Category[0].id, images: ['i.png'], hsnCode: '6109', ...o } }),
   Variant: (db, s, i, o) => db.variant.create({ data: { productId: s.Product[i % s.Product.length].id, optionName: 'Size', optionValue: `v${i}-${rnd()}`, priceDelta: 1, stock: 2, sku: `vs-${rnd()}`, ...o } }),
   Order: (db, s, i, o) => db.order.create({ data: { orderNo: `ORD-${i}-${rnd()}`, customerId: s.Customer[i % s.Customer.length].id, items: [{ sku: 'x', qty: 1 }], subtotal: 10, shipping: 1, tax: 1, total: 12, paymentMode: 'COD', address: { city: 'Pune' }, ...o } }),
   Coupon: (db, _s, i, o) => db.coupon.create({ data: { code: `C${i}${rnd()}`, type: 'PERCENT', value: 10, minOrder: 100, usageLimit: 5, ...o } }),
@@ -62,12 +62,14 @@ const factories: Record<string, (db: any, s: Seed, i: number, over?: Row) => Pro
   RefreshToken: (db, s, i, o) => db.refreshToken.create({ data: { userId: s.User[0].id, familyId: randomUUID(), tokenHash: `h-${rnd()}-${i}`, expiresAt: new Date(Date.now() + 86_400_000), ...o } }),
   PasswordResetToken: (db, s, i, o) => db.passwordResetToken.create({ data: { userId: s.User[0].id, tokenHash: `r-${rnd()}-${i}`, expiresAt: new Date(Date.now() + 1_800_000), ...o } }),
   AuditLog: (db, _s, i, o) => db.auditLog.create({ data: { action: `gate.seed.${i}`, meta: { i }, ...o } }),
+  Payment: (db, s, i, o) => db.payment.create({ data: { orderId: s.Order[i % s.Order.length].id, providerOrderId: `order_${rnd()}${i}`, amount: 12, ...o } }),
+  WebhookEvent: (db, _s, i, o) => db.webhookEvent.create({ data: { eventId: `evt_${rnd()}${i}`, event: 'payment.captured', ...o } }),
   Media: (db, _s, i, o) => db.media.create({ data: { kind: 'product', filename: `img-${i}.jpg`, contentType: 'image/jpeg', originalKey: `tenants/x/originals/${rnd()}.jpg`, declaredBytes: 10, ...o } }),
 };
 /** Run a factory against a recorder instead of the DB to obtain the exact create-data it would send. */
 const recorder: any = new Proxy({}, { get: () => ({ create: ({ data }: Row) => ({ __data: data }) }) });
 const dataFor = async (m: string, s: Seed, i: number, over: Row = {}): Promise<Row> => ((await factories[m](recorder, s, i, over)) as any).__data;
-const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media'];
+const SEED_ORDER = ['ThemeConfig', 'Settings', 'TenantUsage', 'Category', 'Customer', 'Product', 'Variant', 'Order', 'Payment', 'WebhookEvent', 'Coupon', 'Page', 'User', 'RefreshToken', 'PasswordResetToken', 'AuditLog', 'Media'];
 
 // ---- per-model attack metadata ----
 interface Meta {
@@ -86,7 +88,7 @@ const META: Record<string, Meta> = {
     touch: { image: 'touched.png' }, compound: (r) => ({ tenantId_slug: { tenantId: r.tenantId, slug: r.slug } }), before: ['product'],
     crossRef: (db, s, o) => factories.Category(db, s, 50, { parentId: o.Category[0].id }),
   },
-  Customer: { touch: { name: 'touched' }, compound: (r) => ({ tenantId_phone: { tenantId: r.tenantId, phone: r.phone } }), before: ['order'] },
+  Customer: { touch: { name: 'touched' }, compound: (r) => ({ tenantId_phone: { tenantId: r.tenantId, phone: r.phone } }), before: ['payment', 'order'] },
   Product: {
     touch: { stock: 99 }, compound: (r) => ({ tenantId_slug: { tenantId: r.tenantId, slug: r.slug } }),
     crossRef: (db, s, o) => factories.Product(db, s, 50, { categoryId: o.Category[0].id }),
@@ -96,9 +98,14 @@ const META: Record<string, Meta> = {
     crossRef: (db, s, o) => factories.Variant(db, s, 50, { productId: o.Product[0].id }),
   },
   Order: {
-    touch: { tax: 5 }, compound: (r) => ({ tenantId_orderNo: { tenantId: r.tenantId, orderNo: r.orderNo } }),
+    touch: { tax: 5 }, compound: (r) => ({ tenantId_orderNo: { tenantId: r.tenantId, orderNo: r.orderNo } }), before: ['payment'],
     crossRef: (db, s, o) => factories.Order(db, s, 50, { customerId: o.Customer[0].id }),
   },
+  Payment: {
+    touch: { method: 'touched' }, compound: (r) => ({ tenantId_provider_providerOrderId: { tenantId: r.tenantId, provider: r.provider, providerOrderId: r.providerOrderId } }),
+    crossRef: (db, s, o) => factories.Payment(db, s, 50, { orderId: o.Order[0].id }),
+  },
+  WebhookEvent: { touch: { outcome: 'touched' }, compound: (r) => ({ tenantId_provider_eventId: { tenantId: r.tenantId, provider: r.provider, eventId: r.eventId } }) },
   Coupon: { touch: { minOrder: 5 }, compound: (r) => ({ tenantId_code: { tenantId: r.tenantId, code: r.code } }) },
   Page: { touch: { title: 'touched' }, compound: (r) => ({ tenantId_slug: { tenantId: r.tenantId, slug: r.slug } }) },
   User: { touch: { phone: '000' }, compound: (r) => ({ tenantId_email: { tenantId: r.tenantId, email: r.email } }) },
@@ -181,7 +188,7 @@ describe('GATE: tenant isolation across every model', () => {
         expect(factories[m]).toBeDefined();
         for (const k of ['A', 'B'] as const) expect(seeded[k][m].length).toBeGreaterThan(0);
       }
-      expect(MODELS).toHaveLength(16);
+      expect(MODELS).toHaveLength(18);
     });
     it('money is integer paise everywhere: no Float/Decimal field in any model', () => {
       for (const m of DMMF_MODELS) for (const f of m.fields) expect(`${m.name}.${f.name}:${f.type}`).not.toMatch(/:(Float|Decimal)$/);
@@ -192,6 +199,7 @@ describe('GATE: tenant isolation across every model', () => {
       const ALLOW = new Set([
         'prisma/prisma.service.ts', 'prisma/tenant-scope.ts', 'tenancy/tenant-resolver.service.ts', 'superadmin/tenants.service.ts',
         'media/media-worker.ts', // claims queued images across tenants (one SKIP LOCKED update); processing runs inside runAsTenant
+        'jobs/jobs.service.ts', // lists tenant ids to iterate (select id/name/slug only); every job body runs inside runAsTenant
       ]);
       const root = join(__dirname, '..', 'src');
       const walk = (d: string): string[] => readdirSync(d).flatMap((f) => (statSync(join(d, f)).isDirectory() ? walk(join(d, f)) : [join(d, f)]));
@@ -606,6 +614,57 @@ describe('GATE: tenant isolation across every model', () => {
       expect(imp.body.warnings.some((w: Row) => /has not been uploaded yet/.test(w.reason))).toBe(true);
       // clean up our own pending row so the final snapshot is unchanged
       await me('delete', `/store/media/${f.id}`).expect(204);
+    });
+  });
+
+  // ------------------------------------------------------------------------------------------------
+  describe('STOREFRONT (public routes): host A never sees, prices, sells or looks up anything of B', () => {
+    const api = () => request(app.getHttpServer());
+    const hostA = () => `${T.A.subdomain}.localhost`;
+    const onA = (p: string) => api().get(p).set('Host', hostA());
+
+    it('catalogue: B\'s product / category / page slugs are 404 on A; listings and sitemap carry only A\'s rows', async () => {
+      await onA(`/storefront/products/${seeded.A.Product[0].slug}`).expect(200);
+      for (const p of seeded.B.Product) await onA(`/storefront/products/${p.slug}`).expect(404);
+      for (const c of seeded.B.Category) await onA(`/storefront/products?category=${c.slug}`).expect(404);
+      for (const p of seeded.B.Page) await onA(`/storefront/pages/${p.slug}`).expect(404);
+      const list = (await onA('/storefront/products?pageSize=48').expect(200)).body;
+      const bIds = new Set(seeded.B.Product.map((p: Row) => p.id));
+      expect(list.items.some((p: Row) => bIds.has(p.id))).toBe(false);
+      expect(list.items.length).toBe(seeded.A.Product.length);
+      const boot = (await onA('/storefront/bootstrap').expect(200)).body;
+      expect(boot.categories.some((c: Row) => seeded.B.Category.some((b: Row) => b.id === c.id))).toBe(false);
+      expect(JSON.stringify(boot)).not.toContain(T.B.id);
+      const map = (await onA('/storefront/sitemap').expect(200)).body;
+      expect(map.products.map((p: Row) => p.slug).sort()).toEqual(seeded.A.Product.map((p: Row) => p.slug).sort());
+      const home = (await onA('/storefront/home').expect(200)).body;
+      expect(JSON.stringify(home)).not.toContain(T.B.id);
+      expect([...home.featured, ...home.bestsellers].some((p: Row) => bIds.has(p.id))).toBe(false);
+    });
+
+    it('checkout: B\'s product or variant ids cannot be quoted or ordered on A, even mixed with A\'s own; B\'s stock is untouched', async () => {
+      const body = (items: Row[]) => ({ items, name: 'Gate Shopper', phone: '9876501234', address: { line1: '1 Gate St', city: 'Madurai', state: 'Tamil Nadu', pincode: '625001' }, paymentMode: 'COD' });
+      const bProduct = seeded.B.Product[0], bVariant = seeded.B.Variant[0], aProduct = seeded.A.Product[0];
+      const stockBefore = (await base.product.findUnique({ where: { id: bProduct.id } }))!.stock;
+      await api().post('/storefront/quote').set('Host', hostA()).send({ items: [{ productId: bProduct.id, qty: 1 }] }).expect(400);
+      await api().post('/storefront/quote').set('Host', hostA()).send({ items: [{ productId: aProduct.id, qty: 1 }, { productId: bProduct.id, qty: 1 }] }).expect(400);
+      await api().post('/storefront/checkout').set('Host', hostA()).send(body([{ productId: bProduct.id, qty: 1 }])).expect(400);
+      // B's variant id under A's product
+      await api().post('/storefront/checkout').set('Host', hostA()).send(body([{ productId: aProduct.id, variantId: bVariant.id, qty: 1 }])).expect(400);
+      expect((await base.product.findUnique({ where: { id: bProduct.id } }))!.stock).toBe(stockBefore);
+      expect(await base.order.count({ where: { tenantId: T.B.id } })).toBe(seeded.B.Order.length);
+      expect(await base.order.count({ where: { tenantId: T.A.id } })).toBe(seeded.A.Order.length);
+    });
+
+    it('orders: B\'s order number with B\'s customer phone is 404 on A (lookup and invoice); verify / webhook for B\'s gateway ids do nothing on A', async () => {
+      const bOrder = seeded.B.Order[0];
+      const bPhone = seeded.B.Customer[0].phone;
+      await onA(`/storefront/orders/lookup?orderNo=${bOrder.orderNo}&phone=${bPhone}`).expect(404);
+      await onA(`/storefront/orders/${bOrder.orderNo}/invoice?phone=${bPhone}`).expect(404);
+      const bPay = seeded.B.Payment[0];
+      await api().post('/storefront/payments/razorpay/verify').set('Host', hostA()).send({ orderNo: bOrder.orderNo, razorpay_order_id: bPay.providerOrderId, razorpay_payment_id: 'pay_x', razorpay_signature: 'a'.repeat(64) }).expect(400);
+      expect((await base.payment.findUnique({ where: { id: bPay.id } }))!.status).toBe('PENDING');
+      expect((await base.order.findUnique({ where: { id: bOrder.id } }))!.paymentStatus).toBe(bOrder.paymentStatus);
     });
   });
 
