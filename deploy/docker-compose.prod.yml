@@ -28,6 +28,8 @@ x-api-env: &api-env
   TRUST_PROXY: ${TRUST_PROXY:-1}
   # The app connects as the NON-OWNER role. Migrations use the owner role (see "migrate").
   DATABASE_URL: postgresql://${APP_DB_USER:-bmstore_app}:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-bmstore}?schema=public
+  # OWNER role connection: prisma migrate (directUrl), tenant resolution and the audited superadmin bypass. The API requires it.
+  DATABASE_ADMIN_URL: postgresql://${POSTGRES_USER:-bmstore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bmstore}?schema=public
   REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
   TENANT_CACHE_TTL_SECONDS: ${TENANT_CACHE_TTL_SECONDS:-300}
   JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
