@@ -100,7 +100,9 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
     log(`removed previous "${opts.slug}" store`);
   }
   const tenant = await prisma.base.tenant.create({
-    data: { name, slug: opts.slug, subdomain: opts.slug, plan: 'STANDARD', status: 'LIVE', address: '12, Nethaji Road, Kanchipuram 631501', gstNumber: '33ABCDE1234F1Z5', supportPhone: '9876543210', whatsappNumber: '919876543210' },
+    data: { name, slug: opts.slug, subdomain: opts.slug, plan: 'STANDARD', status: 'LIVE' },
+    // No address, GSTIN or phone numbers: a public demo must not show invented business details
+    // (a made-up phone would route WhatsApp enquiries to a stranger). The owner fills these in Settings.
   });
   // the Host -> tenant cache may still point at the previous store with this slug (5 min TTL): drop it
   await app.get(TenantResolver).invalidate({ subdomain: opts.slug }, old ?? {});
@@ -176,7 +178,7 @@ export async function seedDemo(app: INestApplicationContext, opts: SeedOptions):
       { tenantId: tenant.id, code: 'FLAT200', type: 'FLAT', value: 20000, minOrder: 149900, usageLimit: 100, expiresAt: new Date(Date.now() + 60 * 86_400_000) },
     ] });
     await pages.ensurePolicyPages();
-    await db.page.create({ data: { tenantId: tenant.id, slug: 'about-us', title: 'About us', content: '<p>Family-run silk and handloom store from Kanchipuram since 1987.</p>' } });
+    await db.page.create({ data: { tenantId: tenant.id, slug: 'about-us', title: 'About us', content: '<p>Silk and handloom sarees from Kanchipuram. This is a demo store: products, prices and details are samples.</p>' } });
 
     // 5. customers and orders
     let orders = 0;

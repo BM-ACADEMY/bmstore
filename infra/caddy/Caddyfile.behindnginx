@@ -1,0 +1,125 @@
+{
+  auto_https off
+  order rate_limit after header
+  servers {
+    trusted_proxies static private_ranges
+  }
+}
+(access_log) {
+  log {
+    output stdout
+    format json
+  }
+}
+(security_headers) {
+  header {
+    Strict-Transport-Security "max-age=31536000"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=(), usb=(), interest-cohort=()"
+    Cross-Origin-Opener-Policy "same-origin-allow-popups"
+    -Server
+    -X-Powered-By
+    defer
+  }
+}
+(limits) {
+  request_body {
+    max_size 25MB
+  }
+  rate_limit {
+    zone auth_per_ip {
+      match {
+        path /api/auth/* /auth/*
+      }
+      key {client_ip}
+      events 20
+      window 1m
+    }
+    zone per_ip {
+      key {client_ip}
+      events 600
+      window 1m
+    }
+  }
+}
+(platform_api) {
+  handle /api/* {
+    uri strip_prefix /api
+    reverse_proxy api:3000 {
+      header_up Host api.{$ROOT_DOMAIN}
+      header_up X-Forwarded-Host api.{$ROOT_DOMAIN}
+    }
+  }
+}
+http://api.{$ROOT_DOMAIN} {
+  import access_log
+  import security_headers
+  import limits
+  encode zstd gzip
+  reverse_proxy api:3000
+}
+http://admin.{$ROOT_DOMAIN} {
+  import access_log
+  import security_headers
+  import limits
+  encode zstd gzip
+  import platform_api
+  handle {
+    reverse_proxy {$ADMIN_UPSTREAM}
+  }
+}
+http://console.{$ROOT_DOMAIN} {
+  import access_log
+  import security_headers
+  import limits
+  encode zstd gzip
+  import platform_api
+  handle {
+    reverse_proxy {$CONSOLE_UPSTREAM}
+  }
+}
+http://{$ROOT_DOMAIN}, http://www.{$ROOT_DOMAIN} {
+  import access_log
+  import security_headers
+  redir https://console.{$ROOT_DOMAIN}{uri} permanent
+}
+http://media.{$ROOT_DOMAIN} {
+  import access_log
+  import security_headers
+  import limits
+  @read {
+    method GET HEAD
+    path /{$S3_BUCKET}/*
+  }
+  handle @read {
+    header Cache-Control "public, max-age=31536000, immutable"
+    header Access-Control-Allow-Origin "*"
+    reverse_proxy rustfs:9000 {
+      header_up -Authorization
+    }
+  }
+  @preflight method OPTIONS
+  handle @preflight {
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+    respond 204
+  }
+  handle {
+    respond 404
+  }
+}
+http:// {
+  import access_log
+  import security_headers
+  import limits
+  encode zstd gzip
+  handle /api/* {
+    uri strip_prefix /api
+    reverse_proxy api:3000
+  }
+  handle {
+    reverse_proxy {$STOREFRONT_UPSTREAM}
+  }
+}

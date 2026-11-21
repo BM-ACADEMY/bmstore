@@ -103,8 +103,10 @@ Companion runbooks: [SERVER_HARDENING.md](SERVER_HARDENING.md) · [DNS.md](DNS.m
 
 11. **Create the first superadmin**:
     ```bash
-    ./deploy/compose.sh run --rm -e SUPERADMIN_EMAIL=you@bmtechx.in -e SUPERADMIN_PASSWORD='a-long-passphrase-12+' migrate npm run seed:superadmin -w apps/api
+    ./deploy/compose.sh run --rm -e SUPERADMIN_EMAIL=you@bmtechx.in -e SUPERADMIN_PASSWORD='a-long-passphrase-12+' migrate sh -c 'DATABASE_URL="$APP_DATABASE_URL" npm run seed:superadmin'
     ```
+    Seeds run as the app role `bmstore_app` (`APP_DATABASE_URL`), because the owner role skips row-level security
+    and is refused. Do not add `-w apps/api`: the migrate image already works in `/app/apps/api`.
     ✅ Prints `Superadmin you@bmtechx.in created`.
 
 12. **Create a test tenant and confirm on-demand TLS.** Superadmin routes live on the api host

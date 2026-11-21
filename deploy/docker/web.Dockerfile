@@ -13,8 +13,8 @@ COPY package.json package-lock.json ./
 COPY apps/${APP}/package.json apps/${APP}/package.json
 RUN npm ci --no-audit
 COPY apps/${APP} apps/${APP}
-RUN npm run build -w apps/${APP} \
- && npm prune --omit=dev --no-audit
+RUN NODE_ENV=production npm run build -w apps/${APP}
+
 
 FROM node:${NODE_VERSION}-bookworm-slim AS runtime
 ARG APP
@@ -28,4 +28,4 @@ COPY --from=build /app/apps/${APP} ./apps/${APP}
 USER node
 EXPOSE 3000
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["sh", "-c", "npm start -w apps/${APP_NAME}"]
+CMD ["sh", "-c", "cd apps/${APP_NAME} && npx next start -p ${PORT:-3000}"]

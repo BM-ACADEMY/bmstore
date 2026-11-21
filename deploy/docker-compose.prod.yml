@@ -61,9 +61,8 @@ services:
     image: bmstore/caddy:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "127.0.0.1:18080:80"
+      - "127.0.0.1:18443:443"
     environment:
       ROOT_DOMAIN: ${ROOT_DOMAIN}
       ACME_EMAIL: ${ACME_EMAIL}
@@ -144,7 +143,9 @@ services:
       start_period: 30s
 
   # One-off: `./deploy/compose.sh run --rm migrate`   (prisma migrate deploy as the OWNER role)
-  # Also used for seeding:  ./deploy/compose.sh run --rm -e SUPERADMIN_EMAIL=.. -e SUPERADMIN_PASSWORD=.. migrate npm run seed:superadmin -w apps/api
+  # Also used for seeding. Seeds must connect as the app role (RLS enforced), so swap in APP_DATABASE_URL:
+  #   ./deploy/compose.sh run --rm -e SUPERADMIN_EMAIL=.. -e SUPERADMIN_PASSWORD=.. migrate sh -c 'DATABASE_URL="$APP_DATABASE_URL" npm run seed:superadmin'
+  # (working_dir is already /app/apps/api, so no `-w apps/api`)
   migrate:
     build:
       context: .
@@ -155,6 +156,7 @@ services:
     environment:
       <<: *api-env
       DATABASE_URL: postgresql://${POSTGRES_USER:-bmstore}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bmstore}?schema=public
+      APP_DATABASE_URL: postgresql://${APP_DB_USER:-bmstore_app}:${APP_DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-bmstore}?schema=public
     command: ["npx", "prisma", "migrate", "deploy"]
     working_dir: /app/apps/api
     depends_on:
