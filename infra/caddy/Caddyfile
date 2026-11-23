@@ -83,6 +83,8 @@
 }
 
 # API reachable on a platform host: force the Host the API treats as "platform".
+# Unused on purpose: admin and console must NOT import this. Their own /api route handlers set the httpOnly
+# session cookies and forward the right Host; sending /api straight to the API skipped both (login loop).
 (platform_api) {
 	handle /api/* {
 		uri strip_prefix /api
@@ -109,7 +111,6 @@ admin.{$ROOT_DOMAIN} {
 	import security_headers
 	import limits
 	encode zstd gzip
-	import platform_api
 	handle {
 		reverse_proxy {$ADMIN_UPSTREAM}
 	}
@@ -120,7 +121,6 @@ console.{$ROOT_DOMAIN} {
 	import security_headers
 	import limits
 	encode zstd gzip
-	import platform_api
 	handle {
 		reverse_proxy {$CONSOLE_UPSTREAM}
 	}

@@ -59,6 +59,8 @@
 	}
 }
 
+# Unused on purpose: admin and console must NOT import this. Their own /api route handlers set the httpOnly
+# session cookies and forward the right Host; sending /api straight to the API skipped both (login loop).
 (platform_api) {
 	uri strip_prefix /api
 	reverse_proxy api:3000 {
@@ -85,7 +87,6 @@
 	@admin host admin.{$ROOT_DOMAIN}
 	handle @admin {
 		handle /api/* {
-			import platform_api
 		}
 		handle {
 			reverse_proxy {$ADMIN_UPSTREAM}
@@ -95,7 +96,6 @@
 	@console host console.{$ROOT_DOMAIN}
 	handle @console {
 		handle /api/* {
-			import platform_api
 		}
 		handle {
 			reverse_proxy {$CONSOLE_UPSTREAM}

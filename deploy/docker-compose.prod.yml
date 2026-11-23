@@ -205,6 +205,8 @@ services:
       PORT: "3000"
       ROOT_DOMAIN: ${ROOT_DOMAIN}
       API_INTERNAL_URL: http://api:3000
+      # the app reads API_URL (not API_INTERNAL_URL) for its server-side calls to the API
+      API_URL: http://api:3000
       NEXT_PUBLIC_API_URL: https://api.${ROOT_DOMAIN}
     depends_on:
       api:
@@ -226,6 +228,9 @@ services:
       PORT: "3000"
       ROOT_DOMAIN: ${ROOT_DOMAIN}
       API_INTERNAL_URL: http://api:3000
+      # the app reads API_URL (not API_INTERNAL_URL) for its server-side calls to the API
+      API_URL: http://api:3000
+      API_HOST: api.${ROOT_DOMAIN}   # platform host: the console only calls /superadmin/*
       NEXT_PUBLIC_API_URL: https://api.${ROOT_DOMAIN}
     depends_on:
       api:
