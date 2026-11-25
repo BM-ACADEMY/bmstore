@@ -1,4 +1,5 @@
 'use client';
+import { withBase } from '@/lib/base-path';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { api } from '@/lib/api';
@@ -70,7 +71,7 @@ export default function OrderPage() {
             <a className="btn-secondary text-[#1f8f5a]" href={`https://wa.me/${phone.length === 10 ? '91' + phone : phone}?text=${encodeURIComponent(`Hi ${o.customer?.name}, about your order ${o.orderNo}: `)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
         )}
-        <a className="btn-secondary mt-3 w-full" href={`/api/store/orders/${o.id}/invoice`} download>Download GST invoice (PDF)</a>
+        <a className="btn-secondary mt-3 w-full" href={withBase(`/api/store/orders/${o.id}/invoice`)} download>Download GST invoice (PDF)</a>
       </Card>
 
       {o.history?.length > 0 && (

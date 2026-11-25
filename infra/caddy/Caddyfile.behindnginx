@@ -62,14 +62,12 @@ http://api.{$ROOT_DOMAIN} {
   encode zstd gzip
   reverse_proxy api:3000
 }
+# The store admin picks its store from the Host, so it lives at https://<store host>/admin (tenant block below).
+# This host has no store; it only tells people where to go.
 http://admin.{$ROOT_DOMAIN} {
   import access_log
   import security_headers
-  import limits
-  encode zstd gzip
-  handle {
-    reverse_proxy {$ADMIN_UPSTREAM}
-  }
+  respond "Store admin is on your own store's address: add /admin, for example https://yourstore.{$ROOT_DOMAIN}/admin" 404
 }
 http://console.{$ROOT_DOMAIN} {
   import access_log
@@ -115,6 +113,10 @@ http:// {
   import security_headers
   import limits
   encode zstd gzip
+  # Store owner admin (Next basePath /admin). Keeps the store's Host, so the API resolves the right tenant.
+  handle /admin* {
+    reverse_proxy {$ADMIN_UPSTREAM}
+  }
   handle /api/* {
     uri strip_prefix /api
     reverse_proxy api:3000

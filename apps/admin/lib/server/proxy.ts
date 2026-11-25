@@ -1,6 +1,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import { NextRequest, NextResponse } from 'next/server';
+import { BASE_PATH } from '../base-path';
 
 export const API_URL = (process.env.API_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 export const ACCESS = 'bm_access';
@@ -14,13 +15,14 @@ export function storeHost(req: NextRequest) {
 const secure = (req: NextRequest) => req.nextUrl.protocol === 'https:' || req.headers.get('x-forwarded-proto') === 'https';
 
 export function setSession(res: NextResponse, req: NextRequest, tokens: { accessToken: string; refreshToken: string }) {
-  const base = { httpOnly: true, sameSite: 'lax' as const, secure: secure(req), path: '/' };
+  // path /admin: the storefront on the same host never receives the owner's tokens
+  const base = { httpOnly: true, sameSite: 'lax' as const, secure: secure(req), path: BASE_PATH };
   res.cookies.set(ACCESS, tokens.accessToken, { ...base, maxAge: 60 * 60 * 24 * 30 }); // kept; the API decides validity (15 min)
   res.cookies.set(REFRESH, tokens.refreshToken, { ...base, maxAge: 60 * 60 * 24 * 30 });
 }
 export function clearSession(res: NextResponse) {
-  res.cookies.set(ACCESS, '', { path: '/', maxAge: 0 });
-  res.cookies.set(REFRESH, '', { path: '/', maxAge: 0 });
+  res.cookies.set(ACCESS, '', { path: BASE_PATH, maxAge: 0 });
+  res.cookies.set(REFRESH, '', { path: BASE_PATH, maxAge: 0 });
 }
 
 /**

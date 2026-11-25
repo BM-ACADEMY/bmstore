@@ -28,7 +28,7 @@ Without Docker, `npm run dev:storage -w apps/api` gives a disk-backed object sto
 (see `apps/api/.env.example`, S3_* block) and `npx ts-node test/razorpay-fake.ts` a Razorpay double on :9200. See `PHASE3_REPORT.md`.
 
 Store admin UI: `npm run dev -w apps/admin` (port 3001), then open the store's host on that port, e.g.
-`http://mystore.localhost:3001`. The admin forwards the browser's Host to the API (`API_URL`, default `http://localhost:3000`),
+`http://mystore.localhost:3001/admin` (in production: `https://<store host>/admin`). The admin forwards the browser's Host to the API (`API_URL`, default `http://localhost:3000`),
 so it manages whichever store it is opened on; tokens live in httpOnly cookies set by its `/api/auth/*` route handlers.
 The superadmin API lives on a platform host: `admin.localhost:3000/superadmin/tenants`.
 

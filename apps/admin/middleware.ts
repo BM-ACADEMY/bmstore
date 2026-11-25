@@ -10,8 +10,16 @@ export function middleware(req: NextRequest) {
     url.search = pathname !== '/' ? `?next=${encodeURIComponent(pathname)}` : '';
     return NextResponse.redirect(url);
   }
-  if (signedIn && pathname === '/login') return NextResponse.redirect(new URL('/', req.url));
+  if (signedIn && pathname === '/login') {
+    // clone nextUrl (not new URL('/', req.url)) so the /admin base path is kept
+    const url = req.nextUrl.clone();
+    url.pathname = '/';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
   return NextResponse.next();
 }
 
-export const config = { matcher: ['/((?!api|_next|favicon.ico|icon.svg|manifest.webmanifest).*)'] };
+// Paths here are relative to the /admin base path (Next adds it to the matcher). The pattern alone needs a
+// character after "/admin/", so the bare dashboard URL "/admin" is listed separately.
+export const config = { matcher: ['/', '/((?!api|_next|favicon.ico|icon.svg|manifest.webmanifest).*)'] };

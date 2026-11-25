@@ -82,7 +82,7 @@ export class AppConfig {
   /** Public store URL. {host} = <subdomain>.<rootDomain>. Dev default points at the storefront dev server. */
   readonly storeUrlTemplate = process.env.STORE_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3002' : 'https://{host}');
   /** Store admin URL (impersonation lands here). {host} = <subdomain>.<rootDomain>. */
-  readonly adminUrlTemplate = process.env.ADMIN_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3001' : 'https://{host}/admin');
+  readonly adminUrlTemplate = process.env.ADMIN_URL_TEMPLATE || (this.rootDomain === 'localhost' ? 'http://{host}:3001/admin' : 'https://{host}/admin');
   /** BullMQ platform jobs (chasers, renewals, expiry, backup, usage, developer summary) + webhook delivery worker. Off under test. */
   readonly platformJobsEnabled = (process.env.JOBS_WORKER ?? (process.env.NODE_ENV === 'test' ? '0' : '1')) === '1';
   /** Outbound n8n webhook (one URL receives every event; n8n routes on `event`). Unset => events are recorded, not sent. */

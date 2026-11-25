@@ -84,22 +84,15 @@
 		reverse_proxy api:3000
 	}
 
+	# The store admin picks its store from the Host, so it lives at https://<store host>/admin (below).
 	@admin host admin.{$ROOT_DOMAIN}
 	handle @admin {
-		handle /api/* {
-		}
-		handle {
-			reverse_proxy {$ADMIN_UPSTREAM}
-		}
+		respond "Store admin is on your own store's address: add /admin, for example https://yourstore.{$ROOT_DOMAIN}/admin" 404
 	}
 
 	@console host console.{$ROOT_DOMAIN}
 	handle @console {
-		handle /api/* {
-		}
-		handle {
-			reverse_proxy {$CONSOLE_UPSTREAM}
-		}
+		reverse_proxy {$CONSOLE_UPSTREAM}
 	}
 
 	@root host {$ROOT_DOMAIN} www.{$ROOT_DOMAIN}
@@ -133,12 +126,20 @@
 	}
 
 	# Any other <slug>.<ROOT_DOMAIN> is a tenant store (unknown slugs get the API's 404).
-	handle /api/* {
-		uri strip_prefix /api
-		reverse_proxy api:3000
-	}
+	# Wrapped in a matcher-less handle so it sorts after the host handles above: a bare `handle /api/*` here
+	# would be sorted first and catch /api on the console host too.
 	handle {
-		reverse_proxy {$STOREFRONT_UPSTREAM}
+		# Store owner admin (Next basePath /admin). Keeps the store's Host, so the API resolves the right tenant.
+		handle /admin* {
+			reverse_proxy {$ADMIN_UPSTREAM}
+		}
+		handle /api/* {
+			uri strip_prefix /api
+			reverse_proxy api:3000
+		}
+		handle {
+			reverse_proxy {$STOREFRONT_UPSTREAM}
+		}
 	}
 }
 
@@ -151,6 +152,9 @@ https:// {
 	import security_headers
 	import limits
 	encode zstd gzip
+	handle /admin* {
+		reverse_proxy {$ADMIN_UPSTREAM}
+	}
 	handle /api/* {
 		uri strip_prefix /api
 		reverse_proxy api:3000

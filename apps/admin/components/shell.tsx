@@ -1,4 +1,5 @@
 'use client';
+import { withBase } from '@/lib/base-path';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -30,7 +31,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { data: profile } = useLoad(() => api('/store/profile'), []);
   const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
-  const logout = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.replace('/login'); };
+  const logout = async () => { await fetch(withBase('/api/auth/logout'), { method: 'POST' }); router.replace('/login'); };
   return (
     <ToastProvider>
       <div className="min-h-dvh md:flex">

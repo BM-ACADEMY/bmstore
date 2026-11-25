@@ -1,5 +1,7 @@
 'use client';
 
+import { stripBase, withBase } from './base-path';
+
 /** Browser-side client for the same-origin proxy (/api/...). Errors carry the API's plain-language message. */
 export class ApiError extends Error {
   constructor(readonly status: number, message: string, readonly body?: unknown) { super(message); }
@@ -20,9 +22,9 @@ export async function api<T = any>(path: string, init: RequestInit & { json?: un
   const headers = new Headers(init.headers);
   let body = init.body;
   if (init.json !== undefined) { headers.set('content-type', 'application/json'); body = JSON.stringify(init.json); }
-  const r = await fetch(`/api${path}`, { ...init, headers, body, credentials: 'same-origin' });
-  if (r.status === 401 && typeof window !== 'undefined' && !location.pathname.startsWith('/login')) {
-    location.href = `/login?next=${encodeURIComponent(location.pathname)}`;
+  const r = await fetch(withBase(`/api${path}`), { ...init, headers, body, credentials: 'same-origin' });
+  if (r.status === 401 && typeof window !== 'undefined' && !location.pathname.startsWith(withBase('/login'))) {
+    location.href = withBase(`/login?next=${encodeURIComponent(stripBase(location.pathname))}`);
   }
   if (r.status === 204) return undefined as T;
   const text = await r.text();
