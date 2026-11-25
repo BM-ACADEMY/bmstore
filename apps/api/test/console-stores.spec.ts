@@ -112,7 +112,7 @@ describe('console: stores, lifecycle, impersonation, renewals, usage, refunds, a
     const id = r.store.id;
     await s.call('post', `/superadmin/console/stores/${id}/impersonate`).send({ reason: 'x' }).expect(400);
     const imp = (await s.call('post', `/superadmin/console/stores/${id}/impersonate`).send({ reason: 'client asked for help with photos' }).expect(200)).body;
-    expect(imp.url).toMatch(new RegExp(`^http://${r.store.subdomain}\\.localhost:3001/api/auth/impersonate\\?code=`));
+    expect(imp.url).toMatch(new RegExp(`^http://${r.store.subdomain}\\.localhost:3001/admin/api/auth/impersonate\\?code=`));
     const code = decodeURIComponent(imp.url.split('code=')[1]);
 
     await api().post('/auth/impersonate').set('Host', `${other.store.subdomain}.localhost`).send({ code }).expect(403); // wrong store: and the code is burnt

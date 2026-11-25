@@ -1,4 +1,5 @@
 'use client';
+import { withBase } from '@/lib/base-path';
 import { useRef, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { Card, Field, PageTitle, Toggle, useToast } from '@/components/ui';
@@ -21,7 +22,7 @@ export default function ImportPage() {
     try {
       const type = file.name.toLowerCase().endsWith('.xlsx') ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
       const q = new URLSearchParams({ filename: file.name, dryRun: String(dryRun), status: live ? 'ACTIVE' : 'DRAFT', mode: upsert ? 'upsert' : 'create' });
-      const r = await fetch(`/api/store/import/products?${q}`, { method: 'POST', headers: { 'content-type': type }, body: file });
+      const r = await fetch(withBase(`/api/store/import/products?${q}`), { method: 'POST', headers: { 'content-type': type }, body: file });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) throw new ApiError(r.status, Array.isArray(data.message) ? data.message.join('. ') : data.message || 'Could not read the file');
       setReport(data);
@@ -35,8 +36,8 @@ export default function ImportPage() {
       <Card className="flex flex-col gap-4">
         <p className="text-sm text-ink-2">Columns: <b>name, price, mrp</b> (required) and description, sku, stock, category, hsn_code, image_filename. Prices in rupees. Upload photos first so <i>image_filename</i> can match them.</p>
         <div className="flex gap-2">
-          <a className="btn-secondary flex-1" href="/api/store/import/products/template?format=xlsx">Excel template</a>
-          <a className="btn-secondary flex-1" href="/api/store/import/products/template?format=csv">CSV template</a>
+          <a className="btn-secondary flex-1" href={withBase('/api/store/import/products/template?format=xlsx')}>Excel template</a>
+          <a className="btn-secondary flex-1" href={withBase('/api/store/import/products/template?format=csv')}>CSV template</a>
         </div>
       </Card>
       <Card className="flex flex-col gap-4">

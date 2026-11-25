@@ -1,4 +1,5 @@
 'use client';
+import { withBase } from '@/lib/base-path';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { Field, Input } from '@/components/ui';
@@ -15,13 +16,13 @@ function LoginForm() {
   const [forgot, setForgot] = useState(false);
   const [sent, setSent] = useState(false);
 
-  useEffect(() => { fetch('/api/store/public').then((r) => (r.ok ? r.json() : null)).then(setStore).catch(() => undefined); }, []);
+  useEffect(() => { fetch(withBase('/api/store/public')).then((r) => (r.ok ? r.json() : null)).then(setStore).catch(() => undefined); }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
-      const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) });
+      const r = await fetch(withBase('/api/auth/login'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) });
       if (!r.ok) {
         const b = await r.json().catch(() => ({}));
         const ra = r.headers.get('retry-after');
@@ -35,7 +36,7 @@ function LoginForm() {
     e.preventDefault();
     setBusy(true); setError(null);
     try {
-      const r = await fetch('/api/auth/forgot-password', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email }) });
+      const r = await fetch(withBase('/api/auth/forgot-password'), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email }) });
       if (!r.ok) { setError('Could not send the email right now. Please try again in a minute.'); return; }
       setSent(true);
     } finally { setBusy(false); }

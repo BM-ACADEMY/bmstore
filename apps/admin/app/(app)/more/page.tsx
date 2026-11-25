@@ -1,4 +1,5 @@
 'use client';
+import { withBase } from '@/lib/base-path';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -17,7 +18,7 @@ const ITEMS = [
 export default function MorePage() {
   const router = useRouter();
   const { data: me } = useLoad(() => api('/auth/me'), []);
-  const logout = async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.replace('/login'); };
+  const logout = async () => { await fetch(withBase('/api/auth/logout'), { method: 'POST' }); router.replace('/login'); };
   return (
     <div className="flex flex-col gap-4">
       <PageTitle title="More" sub={me ? `Signed in as ${me.role === 'store_owner' ? 'owner' : 'staff'}` : undefined} />
