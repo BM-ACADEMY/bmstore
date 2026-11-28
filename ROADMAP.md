@@ -1,6 +1,8 @@
 # BM TechX Store: Roadmap
 
 **Last updated:** 2026-11-28
+**Target completion date for all remaining work (Phases 6–12): Tuesday 2026-12-08.** See §4a for the day-by-day
+schedule, staffing needed and the tasks at risk.
 **Based on:** branch `arshad` at `fb5f416`. That equals `main` at `226a4fb` plus one local change (docker-compose Postgres port 5433). `origin/main` is at `5c84cac` and has PR #7, which is not pulled locally.
 **Also checked:** the unmerged branch `origin/claude/intelligent-edison-uezeqo` (Phase 4, 7 commits ahead of `main`).
 **Sources:** `PREWORK_REPORT.md`, `PHASE1_REPORT.md` … `PHASE5_REPORT.md`, `PHASE4_REPORT.md` on the Phase 4 branch, `docs/runbooks/*`, source code, the 2026-11-28 code audit, and tracker items #112 / Order 10 / Order 5.
@@ -138,6 +140,52 @@ EXTERNAL (start the paperwork early, it runs in calendar time)
 | B3 | No test environment | #112 step 2, safe client previews | R6.4 |
 | B4 | Real Razorpay test-mode payment never run | Confidence that checkout works | R6.5 |
 | B5 | Import has no variant columns | Fast import for fashion/size/colour catalogues | R7.1 |
+
+---
+
+## 4a. Delivery schedule: target 8 December 2026
+
+**Deadline:** all Phase 6–12 tasks are scheduled to finish by **Tuesday 2026-12-08**.
+
+**Window:** 2026-11-30 (Mon) to 2026-12-08 (Tue). That is **7 weekdays**, or **8 working days if Saturday 5 Dec is
+worked**.
+
+**Capacity check:** the effort estimates in §6 add up to about **48 developer-days**. Finishing by 8 December
+therefore needs about **6 developers working in parallel** (fewer if Saturday is worked). The plan holds only if
+that staffing is confirmed by 30 Nov (open decision Q-TEAM, §9). With fewer people, the **Critical** and **High**
+tasks are scheduled first, and the rest move past 8 December in the order shown.
+
+**External waits** do not depend on us and **cannot be guaranteed by 8 December**: WhatsApp approval, SMS/DLT
+registration, client KYC, DNS. For those tasks the target is "integration built and tested in test mode by 8 Dec;
+live once approval arrives". Applications must be submitted on **30 Nov**.
+
+### Day-by-day plan
+
+| Date | Track A: Platform / critical path | Track B: Products | Track C: Onboarding and integrations | Track D: Testing, QA, ops | Milestone |
+|---|---|---|---|---|---|
+| **Mon 30 Nov** | R6.1 merge Phase 4 (start) · R6.3 Razorpay key screen (start) · R6.4 test environment (start, after Q-ENV) · R6.8 sync branch | R7.3 several images per row | Submit WhatsApp, SMS/DLT, email, Razorpay test-account applications · R8.1 branding from intake | R10.1 CI check and required gate · R12.1 backup restore drill | Decisions Q-ENV, Q-TEAM, Q-VAR, Q-SHIP, Q-SLA answered |
+| **Tue 1 Dec** | R6.1 done · R6.3 done · R6.4 done · R6.7 admin URL | R7.1 variant import (start) | R8.1 done · R9.2 email sender | R12.3 backup mount · R12.6 hardening | **Test link live (#112)** |
+| **Wed 2 Dec** | R6.2 one theme vocabulary · R6.5 real Razorpay test checkout on a phone · R6.6 production SSL | R7.1 done · R7.4 category screen · R7.5 pack sizes (with R6.1) | R8.3 owner invite · R9.7 webhook secret mandatory | R10.5 Tamil review · R11.3 prepared-data standard | **Phase 6 complete** |
+| **Thu 3 Dec** | R11.1 step timers | R7.2 colour × size (start) | R8.4 handover pack · R9.4 delivery rules (start) | R10.2 browser tests (start) · R10.3 create-store test | |
+| **Fri 4 Dec** | R11.4 align in-code target | R7.2 (continued) · R7.6 payments in admin | R9.4 done · R9.5 refund test keys · R8.5 guided console flow (start) | R10.2 (continued) · R12.2 scheduler safety | |
+| **Sat 5 Dec** | **R11.2 first timed rehearsal** | R7.2 (continued) | R8.5 done · R8.6 demo photos | R10.4 complete QA checks · R10.6 performance re-measure | **First 30-min rehearsal logged in §7** |
+| **Mon 7 Dec** | Fix rehearsal findings | R7.2 done | R8.2 client intake form · R9.1 WhatsApp / R9.3 OTP built and tested in test mode | R10.2 done · R12.4 media privacy · R12.5 server hardening · R12.7 wildcard cert | **Phase 7 complete** |
+| **Tue 8 Dec** | **R11.5 rehearsals 2 and 3** · full regression (`npm test`, `test:gate`, browser tests) on the test environment | — | R8.2 done · R9.6 credit note PDF | R12.8 admin Tamil · R12.9 per-store rate limits · R12.10 docs refresh | **All tasks closed or carried over with a reason; roadmap statuses updated** |
+
+### Tasks at risk for 8 December
+
+| Task | Why at risk | Fallback if it slips |
+|---|---|---|
+| R9.1 WhatsApp sender | Meta account and template approval take days | Built and tested in test mode; goes live on approval |
+| R9.3 OTP provider | SMS DLT registration can take weeks | Keep OTP optional at checkout; go live on approval |
+| R7.2 Colour × size | 3–5 days, touches schema, checkout and storefront | Ship R7.1 (one-option variant import) on 8 Dec; matrix follows |
+| R11.5 3 rehearsals ≤ 30 min | Needs all Phase 6–8 tasks finished first; results unknown | Record actual times; open tasks for each slow stage |
+| R8.2 Client intake form | 2–3 days, scheduled late | Developer enters the intake from the checklist (R11.3) |
+| R12.8 Admin in Tamil | 2 days, lowest priority | Moves to the next cycle |
+| R6.4 / R6.5 | Depends on decision Q-ENV and a Razorpay test account on 30 Nov | Escalate the same day; everything after Wed 2 Dec shifts |
+
+**Rule for slips:** if a task misses its date, update its status in §6 and add a new date. Don't silently mark it
+done. The 30-minute target counts as met only when §7's log shows it (R11.5).
 
 ---
 
@@ -417,6 +465,7 @@ KYC, DNS propagation, WhatsApp approval and client response time (§8).
 
 | ID | Question | Why it matters |
 |---|---|---|
+| Q-TEAM | How many developers work on this until 8 Dec, and is Saturday 5 Dec a working day? | About 48 developer-days must fit before 8 Dec (§4a) |
 | Q-ENV | Where does the test environment live: a separate server, or the same server with an isolated stack? | R6.4; "do not touch live" rule |
 | Q-VAR | Two-option variants enough, or more (e.g. colour × size × fabric)? | R7.2 design |
 | Q-SHIP | Pincode/zone rules or courier integration (which courier)? | R9.4 |
